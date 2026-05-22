@@ -13,17 +13,20 @@ OPENSKY_PASSWORD = os.getenv("OPENSKY_PASSWORD")
 
 # Determine DB Path (Vercel serverless environment has a read-only filesystem except for /tmp)
 IS_VERCEL = os.getenv("VERCEL") == "1"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SOURCE_DB = os.path.join(BASE_DIR, "flights.db")
+
 if IS_VERCEL:
     DB_PATH = "/tmp/flights.db"
     # Copy the template flights.db to /tmp if it doesn't exist yet
-    if not os.path.exists(DB_PATH) and os.path.exists("flights.db"):
+    if not os.path.exists(DB_PATH) and os.path.exists(SOURCE_DB):
         try:
             import shutil
-            shutil.copy("flights.db", DB_PATH)
+            shutil.copy(SOURCE_DB, DB_PATH)
         except Exception as e:
             print(f"Error copying flights.db to /tmp: {e}")
 else:
-    DB_PATH = "flights.db"
+    DB_PATH = SOURCE_DB
 
 # --- MATH ALGORITHMS FOR TCAS ---
 def haversine(lat1, lon1, lat2, lon2):
