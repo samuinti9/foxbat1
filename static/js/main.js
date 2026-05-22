@@ -29,21 +29,19 @@ function getTacticalVoice() {
     if (!voices || voices.length === 0) return null;
 
     // TIER 1: Known deep male voices by exact name (highest priority)
+    // Google remote voices are highest quality; prioritize them
     const tier1 = [
+        'Google UK English Male',   // Chrome — clean professional British male (BEST)
+        'Google US English',        // Chrome — clean US male
         'Microsoft David',          // Windows — deep US male
-        'Microsoft Mark',           // Windows — deep UK male
-        'Microsoft Guy Online',     // Windows Azure edge voice
-        'Google UK English Male',   // Chrome — deep British male
-        'Google US English',        // Chrome — US male (Note: this is actually male despite no "Male" suffix)
-        'Alex',                     // macOS — deep US male
-        'Daniel',                   // macOS/iOS — deep British male
-        'Fred',                     // macOS — robotic deep male
-        'Thomas',                   // macOS — French-accented English male
+        'Microsoft Mark',           // Windows — UK male
+        'Microsoft Guy Online',     // Windows Azure
+        'Daniel',                   // macOS/iOS — British male
+        'Alex',                     // macOS — US male
         'Rishi',                    // macOS — Indian English male
-        'en-GB-Wavenet-B',         // Android/Cloud — deep British male
-        'en-US-Wavenet-D',         // Android/Cloud — deep US male
-        'en-US-Standard-B',        // Android fallback — US male
-        'en-AU-Wavenet-B',         // Android — deep Australian male
+        'en-GB-Wavenet-B',         // Android — British male
+        'en-US-Wavenet-D',         // Android — US male
+        'en-US-Standard-B',        // Android — US male
     ];
 
     for (const name of tier1) {
@@ -202,8 +200,8 @@ const A10 = {
         window.speechSynthesis.cancel();
 
         const msg = new SpeechSynthesisUtterance(text);
-        msg.rate = 0.85;
-        msg.pitch = 0.1;
+        msg.rate = 0.95;
+        msg.pitch = 0.75;
 
         const speakNow = () => {
             const techVoice = getTacticalVoice();
@@ -1582,8 +1580,8 @@ function announceEmergency(text) {
     voiceSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.pitch = 0.1; 
-    utterance.rate = 0.85;
+    utterance.pitch = 0.75; 
+    utterance.rate = 0.95;
     utterance.volume = 1.0;
 
     const speakNow = () => {
