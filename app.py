@@ -1,6 +1,7 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
 import data_hub
+import sqlite3
 
 # Import Blueprints (Hard Separation)
 from hub_blueprint import hub_bp
@@ -40,6 +41,18 @@ def system_status():
         "subsystems": ["DATA_HUB", "ANALYTICS_ENGINE"],
         "architecture": "FLASK_BLUEPRINTS"
     })
+
+@app.route('/api/reset', methods=['POST'])
+def reset_database():
+    """Wipe all historical flight logs from the database."""
+    try:
+        with sqlite3.connect(data_hub.DB_PATH) as conn:
+            conn.execute("DELETE FROM flight_stats")
+            conn.execute("DELETE FROM flight_archive")
+            conn.commit()
+        return jsonify({"success": True, "message": "Database wiped successfully."})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == '__main__':
     # Running on 8080 as requested in previous sessions

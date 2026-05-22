@@ -25,8 +25,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install flask flask-cors requests python-dotenv reportlab pytest
 
     - name: Run tests
       run: |
-        pytest -q
+        pytest tests/ -q

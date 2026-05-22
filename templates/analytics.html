@@ -269,6 +269,49 @@
     </div>
   </div>
 
+  <!-- ROW 7: Weather & Predictive Delays -->
+  <div class="dash-grid" style="margin-bottom:24px;">
+    <div class="card panel">
+      <h3>🌦️ WEATHER DISRUPTION INDEX<span class="live"><span class="badge badge-amber">SCANNING</span></span></h3>
+      <div style="display:flex;align-items:center;gap:24px;margin-bottom:20px;">
+        <div style="font-family:var(--font-display);font-size:3rem;font-weight:900;color:var(--col-amber);" id="weather-score">—</div>
+        <div>
+          <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--col-muted);letter-spacing:1px;margin-bottom:4px;">AIRSPACE STATUS</div>
+          <div style="font-family:var(--font-display);font-size:1rem;font-weight:700;" id="weather-status">SCANNING...</div>
+        </div>
+      </div>
+    </div>
+    <div class="card panel">
+      <h3>🔮 PREDICTIVE DELAY INTEL</h3>
+      <div id="predictive-delays" style="font-family:var(--font-mono);font-size:0.7rem;color:var(--col-muted);">
+        Analyzing sector patterns...
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 8: Environmental Impact -->
+  <div class="dash-grid" style="margin-bottom:24px;">
+    <div class="card panel">
+      <h3>🌿 ENVIRONMENTAL IMPACT ESTIMATE</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--col-muted);letter-spacing:2px;margin-bottom:8px;">EST. FUEL BURN</div>
+          <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:900;color:var(--col-amber);" id="env-fuel">—</div>
+        </div>
+        <div>
+          <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--col-muted);letter-spacing:2px;margin-bottom:8px;">EST. CO₂ EMISSIONS</div>
+          <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:900;color:var(--col-red);" id="env-co2">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="card panel">
+      <h3>🕐 GLOBAL TIME SYNC</h3>
+      <div id="world-clocks" style="display:flex;flex-wrap:wrap;gap:16px;font-family:var(--font-mono);font-size:0.75rem;color:var(--col-muted);">
+        Loading clocks...
+      </div>
+    </div>
+  </div>
+
 </div><!-- /page -->
 
 <!-- TICKER -->
