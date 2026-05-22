@@ -76,7 +76,7 @@ function initCharts(historicalData, liveFlights) {
         });
     }
 
-    // 4. Speed Histogram
+    // 4. Speed Distribution Pie Chart
     const ctxSpeed = document.getElementById('chart-speed');
     if (ctxSpeed && !speedChart && liveFlights.length > 0) {
         const speedBins = [0, 0, 0, 0, 0]; // <200, 200-400, 400-600, 600-800, 800+
@@ -90,18 +90,25 @@ function initCharts(historicalData, liveFlights) {
         });
 
         speedChart = new Chart(ctxSpeed, {
-            type: 'bar',
+            type: 'pie',
             data: {
-                labels: ['<200', '200-400', '400-600', '600-800', '>800'],
+                labels: ['<200 km/h', '200-400 km/h', '400-600 km/h', '600-800 km/h', '>800 km/h'],
                 datasets: [{
-                    label: 'km/h',
                     data: speedBins,
-                    backgroundColor: 'rgba(244, 63, 94, 0.4)',
-                    borderColor: '#f43f5e',
-                    borderWidth: 1
+                    backgroundColor: ['#38bdf8', '#4ade80', '#facc15', '#f43f5e', '#a78bfa'],
+                    borderWidth: 0
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#64748b' } } } }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { 
+                    legend: { 
+                        position: 'right', 
+                        labels: { color: '#64748b', font: { size: 10 } } 
+                    } 
+                } 
+            }
         });
     }
 }
