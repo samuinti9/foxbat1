@@ -22,15 +22,54 @@ let cmdHistoryIndex = -1;
 
 
 // --- UNIFIED VOICE SELECTOR ---
+// Selects the deepest, most authoritative male voice available across all platforms.
+// Browser TTS voices vary widely by OS — this list covers Windows, macOS, ChromeOS, Android, and Linux.
 function getTacticalVoice() {
     const voices = window.speechSynthesis.getVoices();
-    // Prioritize Microsoft David for a consistent robotic military tone if available on the system
-    const prioritizedKeywords = ['Microsoft David', 'Google UK English Male', 'Male', 'en-GB', 'en-US'];
-    for (let keyword of prioritizedKeywords) {
-        const found = voices.find(v => v.name.includes(keyword) || v.lang.includes(keyword));
+    if (!voices || voices.length === 0) return null;
+
+    // TIER 1: Known deep male voices by exact name (highest priority)
+    const tier1 = [
+        'Microsoft David',          // Windows — deep US male
+        'Microsoft Mark',           // Windows — deep UK male
+        'Microsoft Guy Online',     // Windows Azure edge voice
+        'Google UK English Male',   // Chrome — deep British male
+        'Google US English',        // Chrome — US male (Note: this is actually male despite no "Male" suffix)
+        'Alex',                     // macOS — deep US male
+        'Daniel',                   // macOS/iOS — deep British male
+        'Fred',                     // macOS — robotic deep male
+        'Thomas',                   // macOS — French-accented English male
+        'Rishi',                    // macOS — Indian English male
+        'en-GB-Wavenet-B',         // Android/Cloud — deep British male
+        'en-US-Wavenet-D',         // Android/Cloud — deep US male
+        'en-US-Standard-B',        // Android fallback — US male
+        'en-AU-Wavenet-B',         // Android — deep Australian male
+    ];
+
+    for (const name of tier1) {
+        const found = voices.find(v => v.name.includes(name));
         if (found) return found;
     }
-    return null;
+
+    // TIER 2: Any voice with "Male" in the name (but NOT "Female")
+    const maleVoice = voices.find(v => 
+        v.name.toLowerCase().includes('male') && 
+        !v.name.toLowerCase().includes('female') &&
+        (v.lang.startsWith('en'))
+    );
+    if (maleVoice) return maleVoice;
+
+    // TIER 3: English voice with lowest default pitch (heuristic: pick last English voice — browsers often list male after female)
+    const englishVoices = voices.filter(v => v.lang.startsWith('en'));
+    if (englishVoices.length > 0) {
+        // Prefer en-GB for authoritative British tone, then en-US
+        const gb = englishVoices.find(v => v.lang === 'en-GB');
+        if (gb) return gb;
+        return englishVoices[englishVoices.length - 1];
+    }
+
+    // TIER 4: absolute fallback
+    return voices[0] || null;
 }
 
 // --- A10 SYSTEM ENGINE ---
@@ -154,8 +193,8 @@ const A10 = {
         window.speechSynthesis.cancel();
 
         const msg = new SpeechSynthesisUtterance(text);
-        msg.rate = 0.95;
-        msg.pitch = 0.8;
+        msg.rate = 0.9;
+        msg.pitch = 0.6;
 
         const speakNow = () => {
             const techVoice = getTacticalVoice();
@@ -1534,8 +1573,8 @@ function announceEmergency(text) {
     voiceSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.pitch = 0.9; 
-    utterance.rate = 0.95;
+    utterance.pitch = 0.6; 
+    utterance.rate = 0.9;
     utterance.volume = 1.0;
 
     const speakNow = () => {
