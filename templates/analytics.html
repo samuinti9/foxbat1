@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FOXBAT — Analytics Hub</title>
   <link rel="stylesheet" href="/static/css/foxbat.css?v=1">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Chart.js: local copy for reliability, CDN as fallback -->
+  <script src="/static/js/chart.umd.min.js"></script>
+  <script>if(typeof Chart==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>');}</script>
   <style>
     body { overflow-y: auto; padding-top: 64px; }
     .page { max-width: 1400px; margin: 0 auto; padding: 40px 32px 80px; }
@@ -319,6 +321,6 @@
   <div class="ticker__inner">[ FLASH ] GLOBAL AIRSPACE LOAD: STABLE &nbsp;&nbsp;///&nbsp;&nbsp; WEATHER ADVISORY: CYCLONE SCAN IN BAY OF BENGAL &nbsp;&nbsp;///&nbsp;&nbsp; SATELLITE CONNECTION: 100% &nbsp;&nbsp;///&nbsp;&nbsp; 7700 MONITORING ACTIVE &nbsp;&nbsp;///&nbsp;&nbsp; FOXBAT UPLINK: SECURE &nbsp;&nbsp;///&nbsp;&nbsp; NO CRITICAL DELAYS IN MAJOR HUBS &nbsp;&nbsp;///&nbsp;&nbsp;</div>
 </div>
 
-<script src="/static/js/analytics.js?v=4.0"></script>
+<script src="/static/js/analytics.js"></script>
 </body>
 </html>

@@ -1,4 +1,7 @@
 // --- DATA SCIENCE ENGINE (Chart.js Integration) ---
+// Wrapped in DOMContentLoaded to guarantee Chart.js + DOM are ready before execution
+document.addEventListener('DOMContentLoaded', function () {
+
 let trafficChart = null;
 let countryChart = null;
 let altitudeChart = null;
@@ -488,3 +491,16 @@ fetchAnalytics();
 fetchTopFlights();
 setInterval(fetchAnalytics, 15000);
 setInterval(fetchTopFlights, 10000);
+
+// Expose functions for HTML onclick handlers
+window.fetchAnalytics = fetchAnalytics;
+window.fetchTopFlights = fetchTopFlights;
+window.exportCSV = exportCSV;
+window.downloadIntelReport = downloadIntelReport;
+window.resetDatabase = resetDatabase;
+window.forceSync = forceSync;
+window.testEmergency = testEmergency;
+
+console.log('[FOXBAT] Analytics engine initialized. Chart.js version:', typeof Chart !== 'undefined' ? Chart.version : 'NOT LOADED');
+
+}); // end DOMContentLoaded
