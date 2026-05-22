@@ -1,0 +1,8 @@
+Flask==3.0.0
+requests==2.31.0
+flask-cors==4.0.0
+openai
+python-dotenv
+reportlab==4.5.1
+pytest==7.4.0
+google-generativeai

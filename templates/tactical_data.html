@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FOXBAT — Tactical Data</title>
+  <link rel="stylesheet" href="/static/css/foxbat.css?v=1">
+  <style>
+    body { overflow-x: hidden; padding-top: 64px; }
+    
+    /* ── TERMINAL SECTION ── */
+    .terminal-section {
+      padding: 80px 8%;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 100px;
+      align-items: center;
+      position: relative;
+    }
+
+    .terminal-section::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 60%; height: 60%;
+      background: radial-gradient(circle, rgba(34,211,238,0.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .terminal {
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+    }
+
+    .terminal__bar {
+      background: var(--col-bg-3);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .terminal__dots { display: flex; gap: 6px; }
+    .terminal__dot { width: 12px; height: 12px; border-radius: 50%; }
+    .terminal__dot:nth-child(1) { background: #f43f5e; }
+    .terminal__dot:nth-child(2) { background: #fbbf24; }
+    .terminal__dot:nth-child(3) { background: #4ade80; }
+
+    .terminal__filename {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--col-muted);
+    }
+
+    .terminal__body {
+      background: rgba(2, 6, 23, 0.95);
+      padding: 24px;
+      height: 360px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.8;
+    }
+
+    .terminal__body::-webkit-scrollbar { width: 0; }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="o-nav">
+    <a href="/" class="o-nav__logo">FOXBAT SENTINEL</a>
+    <div class="o-nav__links">
+      <a href="/tactical-data" class="o-nav__link o-nav__link--active">TACTICAL DATA</a>
+      <a href="/analytics" class="o-nav__link">ANALYTICS</a>
+      <a href="/radar" class="btn btn-outline" style="font-size:0.65rem; padding:8px 20px;">OPEN RADAR →</a>
+    </div>
+  </nav>
+
+  <!-- TERMINAL -->
+  <section class="terminal-section">
+    <div>
+      <div class="section-label">SIGNAL INTELLIGENCE // SECTOR-7 FEED</div>
+      <h2 style="font-family: var(--font-display); font-size: 2.2rem; line-height:1.2; letter-spacing: 4px; margin-bottom: 20px; color: var(--col-cyan);">DYNAMIC SECTOR<br>TELEMETRY</h2>
+      <p style="color: var(--col-muted); line-height: 1.8; margin-bottom: 32px; max-width: 480px;">
+        Every aircraft in the tracked airspace streams raw ADS-B telemetry through our encrypted downlink. Monitor callsigns, vector headings, flight levels, and transponder codes in real-time with zero-latency synchronization.
+      </p>
+      
+      <div style="display:flex; gap:30px; margin-bottom:40px; font-family:var(--font-mono);">
+        <div style="display:flex; flex-direction:column;">
+          <span style="font-size:0.5rem; color:var(--col-muted); letter-spacing:1px;">UPLINK STATUS</span>
+          <span style="font-size:0.75rem; color:var(--col-green);">● ENCRYPTED</span>
+        </div>
+        <div style="display:flex; flex-direction:column;">
+          <span style="font-size:0.5rem; color:var(--col-muted); letter-spacing:1px;">REFRESH RATE</span>
+          <span style="font-size:0.75rem; color:var(--col-cyan);">100ms / TACTICAL</span>
+        </div>
+        <div style="display:flex; flex-direction:column;">
+          <span style="font-size:0.5rem; color:var(--col-muted); letter-spacing:1px;">SYNC LAYER</span>
+          <span style="font-size:0.75rem; color:var(--col-amber);">L4 SECURE</span>
+        </div>
+      </div>
+
+      <a href="/radar" class="btn btn-primary" style="padding:16px 32px; font-size:0.8rem;">INITIALIZE RADAR FEED →</a>
+    </div>
+    <div class="terminal">
+      <div class="terminal__bar">
+        <div class="terminal__dots">
+          <div class="terminal__dot"></div>
+          <div class="terminal__dot"></div>
+          <div class="terminal__dot" style="background:var(--col-green); animation:glow-pulse 1s infinite;"></div>
+        </div>
+        <span class="terminal__filename">SECURE_UPLINK_ALPHA // telemetry_stream.log</span>
+        <span style="margin-left:auto; font-family:var(--font-mono); font-size:0.5rem; color:var(--col-green); letter-spacing:1px;">UPLINK_STABLE</span>
+      </div>
+      <div class="terminal__body" id="terminal-feed">
+        <span style="color:var(--col-green);">&gt; FOXBAT ENGINE v4.0 — ONLINE</span><br>
+        <span style="color:var(--col-muted);">&gt; CONNECTING TO OPENSKY NETWORK...</span><br>
+        <span style="color:var(--col-green);">&gt; UPLINK ESTABLISHED. TRACKING 5,420 AIRCRAFT</span><br>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Live terminal feed
+    const feed = document.getElementById('terminal-feed');
+    const logs = [
+      { text: 'RECEIVING VECTOR: EMIRATES 501 [LAT:25.20, LNG:55.27, ALT:38000FT]', color: 'var(--col-green)' },
+      { text: 'RADAR SWEEP ALIGNED. ACQUIRING TARGETS IN SECTOR 7', color: 'var(--col-green)' },
+      { text: 'UPDATE: 5,420 AIRCRAFT CURRENTLY IN TRACKED AIRSPACE', color: 'var(--col-cyan)' },
+      { text: 'DECRYPTING AIRBUS A320 TELEMETRY FOR IGO456...', color: 'var(--col-green)' },
+      { text: 'WARNING: HIGH TRAFFIC DENSITY IN MUMBAI FIR', color: 'var(--col-amber)' },
+      { text: 'RECEIVING VECTOR: INDIGO 24 [LAT:28.61, LNG:77.20, SPD:465KT]', color: 'var(--col-green)' },
+      { text: 'ANOMALY: UNKNOWN TRANSPONDER DETECTED — SECTOR ALPHA-9', color: 'var(--col-red)' },
+      { text: 'GEOFENCE WATCH: 3 AIRCRAFT APPROACHING SECTOR BOUNDARY', color: 'var(--col-amber)' },
+      { text: 'SQUAWK 7700: AFR124 — EMERGENCY DECLARED OVER NORTHERN SECTOR', color: 'var(--col-red)' },
+      { text: 'BLACKBOX SYNC: SINGAPORE AIRLINES SQ321 — DATA LOGGED', color: 'var(--col-cyan)' },
+    ];
+
+    setInterval(() => {
+      const entry = logs[Math.floor(Math.random() * logs.length)];
+      const span = document.createElement('span');
+      span.style.color = entry.color;
+      const ts = new Date().toLocaleTimeString('en', { hour12: false });
+      span.innerHTML = `<span style="color:var(--col-dim);">[${ts}]</span> &gt; ${entry.text}<br>`;
+      feed.appendChild(span);
+      if (feed.childNodes.length > 30) feed.removeChild(feed.firstChild);
+      feed.scrollTop = feed.scrollHeight;
+    }, 1800);
+  </script>
+</body>
+</html>

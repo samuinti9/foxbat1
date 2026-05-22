@@ -1,0 +1,213 @@
+/* OASIS AEROSPACE - NEXT GEN LANDING PAGE CSS */
+
+:root {
+    --bg-prime: #020617;
+    --brand: #22d3ee;
+    --text: #f8fafc;
+    --glass: rgba(15, 23, 42, 0.7);
+    --glass-border: rgba(34, 211, 238, 0.2);
+}
+
+body {
+    margin: 0; padding: 0;
+    background: var(--bg-prime);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+/* Background & Ambient Animations */
+.cyber-grid {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2;
+    background-image: linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
+    background-size: 50px 50px;
+}
+
+.radar-bg-sweep {
+    position: fixed; top: -50%; left: 50%; width: 150vw; height: 150vw;
+    background: conic-gradient(from 0deg, transparent 70%, rgba(34, 211, 238, 0.1) 100%);
+    border-radius: 50%; z-index: -1; transform-origin: center;
+    animation: sweep 10s linear infinite; pointer-events: none;
+    margin-left: -75vw;
+}
+
+@keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* Ambient Particles */
+.particle {
+    position: absolute; width: 2px; height: 2px; background: #22d3ee;
+    box-shadow: 0 0 10px #22d3ee; border-radius: 50%; opacity: 0;
+    animation: drift linear infinite; pointer-events: none;
+}
+@keyframes drift {
+    0% { transform: translateY(0) scale(1); opacity: 0; }
+    20% { opacity: 0.8; }
+    80% { opacity: 0.8; }
+    100% { transform: translateY(-500px) scale(0.5); opacity: 0; }
+}
+
+/* Navbar Elements */
+.navbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 60px; background: rgba(2, 6, 23, 0.8);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px); border-bottom: 1px solid var(--glass-border);
+}
+
+.logo { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; font-weight: 900; color: #fff; letter-spacing: 2px;}
+.logo span { color: var(--brand); }
+
+.nav-links { display: flex; gap: 30px; align-items: center; }
+.nav-links a, .theme-toggle {
+    color: #cbd5e1; text-decoration: none; font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+    transition: color 0.3s; background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px;
+}
+.nav-links a:hover, .theme-toggle:hover { color: #fff; }
+
+.btn-outline {
+    border: 1px solid var(--brand) !important; color: var(--brand) !important;
+    padding: 10px 20px; border-radius: 6px;
+}
+.btn-outline:hover { background: rgba(34, 211, 238, 0.1) !important; color: #fff !important; }
+
+/* Main Hero Frame */
+.hero-container {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 10%; min-height: calc(100vh - 80px); gap: 50px;
+}
+
+.hero-content { flex: 1.2; max-width: 650px; z-index: 10; margin-bottom: 40px; }
+
+/* Status Badges */
+.badge {
+    display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px;
+    background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 50px; color: #10b981; font-family: 'Roboto Mono', monospace;
+    font-size: 0.75rem; font-weight: 700; margin-bottom: 30px; letter-spacing: 1px;
+}
+.live-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 10px #10b981; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); } 70% { box-shadow: 0 0 0 8px rgba(16,185,129,0); } 100%{ box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+
+/* Typography */
+.glitch-title {
+    font-family: 'Orbitron', sans-serif; font-size: 4.5rem; font-weight: 900;
+    line-height: 1.1; margin: 0 0 25px; color: #fff; letter-spacing: -1px; text-shadow: 0 0 30px rgba(34, 211, 238, 0.3);
+}
+
+.subtitle {
+    font-size: 1.15rem; color: #94a3b8; line-height: 1.7; margin-bottom: 50px; font-weight: 400; max-width: 550px;
+}
+
+/* CTA Action Buttons */
+.cta-group { display: flex; gap: 20px; margin-bottom: 60px; }
+
+.btn-primary {
+    background: var(--brand); color: #020617; padding: 18px 35px; font-weight: 800; font-family: 'Inter'; font-size: 0.9rem;
+    text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center;
+    transition: all 0.3s; border: 1px solid transparent; text-transform: uppercase; letter-spacing: 1px;
+}
+.glow-effect { box-shadow: 0 10px 30px rgba(34, 211, 238, 0.3); }
+.btn-primary:hover { background: #fff; color: #020617; box-shadow: 0 15px 40px rgba(255, 255, 255, 0.5); transform: translateY(-3px); }
+
+.btn-secondary {
+    background: transparent; color: #fff; padding: 18px 35px; font-weight: 700; font-size: 0.9rem; letter-spacing: 1px;
+    text-decoration: none; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s;
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.05); border-color: #fff; transform: translateY(-3px); }
+
+/* Quick Data Highlights */
+.metrics-row { display: flex; gap: 50px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 40px; }
+.metric { display: flex; flex-direction: column; gap: 8px; }
+.m-val { font-family: 'Orbitron', sans-serif; font-size: 2rem; font-weight: 900; color: #fff; letter-spacing: -1px; }
+.m-lbl { font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; font-weight: bold;}
+
+/* Hero Side Visuals (Interactive Terminal) */
+.hero-visual {
+    flex: 1; position: relative; display: flex; justify-content: center; align-items: center; 
+}
+
+.terminal-window {
+    background: rgba(15, 23, 42, 0.85); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; width: 500px; height: 380px; box-shadow: -20px 30px 60px rgba(0,0,0,0.6); overflow: hidden;
+    display: flex; flex-direction: column; transform: perspective(1200px) rotateY(-15deg) rotateX(5deg); transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.terminal-window:hover { transform: perspective(1200px) rotateY(-5deg) rotateX(2deg) scale(1.02); box-shadow: -10px 20px 40px rgba(34, 211, 238, 0.2); border-color: rgba(34, 211, 238, 0.3); }
+
+.t-header {
+    background: rgba(0,0,0,0.5); padding: 12px 20px; display: flex; align-items: center; gap: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.mac-btns { display: flex; gap: 8px; }
+.mac-btns span { width: 12px; height: 12px; border-radius: 50%; }
+.mac-btns .red { background: #f43f5e; box-shadow: 0 0 5px #f43f5e;} 
+.mac-btns .yellow { background: #facc15; box-shadow: 0 0 5px #facc15;} 
+.mac-btns .green { background: #10b981; box-shadow: 0 0 5px #10b981;}
+.t-title { font-family: 'Roboto Mono', monospace; font-size: 0.8rem; color: #94a3b8; font-weight: bold; }
+
+.t-body {
+    padding: 20px; font-family: 'Roboto Mono', monospace; font-size: 0.8rem; color: #4ade80;
+    line-height: 2; overflow-y: hidden; flex: 1; display: flex; flex-direction: column; justify-content: flex-end;
+}
+
+/* Floating Emergency Card - Moved below the terminal to prevent obstruction */
+.floating-card {
+    position: absolute; 
+    bottom: -110px; /* Move it well below the terminal */
+    left: 50%;
+    transform: translateX(-50%) perspective(1200px) rotateY(-10deg);
+    background: rgba(15, 23, 42, 0.95); 
+    -webkit-backdrop-filter: blur(15px);
+    backdrop-filter: blur(15px);
+    border: 1px solid #f43f5e; 
+    padding: 12px 25px; 
+    border-radius: 12px; 
+    display: flex; 
+    align-items: center; 
+    gap: 15px;
+    box-shadow: 0 10px 40px rgba(244, 63, 94, 0.25); 
+    z-index: 25;
+    animation: float-tactical 5s ease-in-out infinite;
+    transition: all 0.4s ease;
+    white-space: nowrap;
+}
+
+.floating-card:hover {
+    transform: translateX(-50%) perspective(1200px) rotateY(0deg) scale(1.05);
+    box-shadow: 0 15px 50px rgba(244, 63, 94, 0.4);
+    border-color: #ff4d6d;
+}
+
+.card-icon { font-size: 1.8rem; text-shadow: 0 0 15px rgba(244, 63, 94, 0.6); }
+
+@keyframes float-tactical { 
+    0% { transform: translateX(-50%) perspective(1200px) rotateY(-10deg) translateY(0); } 
+    50% { transform: translateX(-50%) perspective(1200px) rotateY(-10deg) translateY(-8px); } 
+    100% { transform: translateX(-50%) perspective(1200px) rotateY(-10deg) translateY(0); } 
+}
+
+/* Light Theme Variables & Overrides */
+body.light-theme { --bg-prime: #f8fafc; --text: #0f172a; --glass-border: rgba(0,0,0,0.1); }
+body.light-theme .cyber-grid {
+    background-image: linear-gradient(rgba(2, 132, 199, 0.08) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(2, 132, 199, 0.08) 1px, transparent 1px);
+}
+body.light-theme .radar-bg-sweep { background: conic-gradient(from 0deg, transparent 70%, rgba(2, 132, 199, 0.15) 100%); }
+body.light-theme .navbar { background: rgba(255,255,255,0.9); }
+body.light-theme .logo { color: #0f172a; }
+body.light-theme .nav-links a, body.light-theme .theme-toggle { color: #475569; }
+body.light-theme .nav-links a:hover, body.light-theme .theme-toggle:hover { color: #0284c7; }
+body.light-theme .glitch-title { color: #0f172a; text-shadow: none; }
+body.light-theme .subtitle, body.light-theme .m-lbl { color: #475569; }
+body.light-theme .m-val { color: #0f172a; }
+body.light-theme .metrics-row { border-color: rgba(0,0,0,0.1); }
+body.light-theme .btn-secondary { color: #0284c7; border-color: #0284c7; }
+body.light-theme .btn-secondary:hover { background: rgba(2, 132, 199, 0.05); }
+
+/* Terminal in Light Mode */
+body.light-theme .terminal-window { background: rgba(255,255,255,0.95); box-shadow: -20px 30px 60px rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.1); }
+body.light-theme .t-header { background: rgba(0,0,0,0.05); border-bottom-color: rgba(0,0,0,0.05); }
+body.light-theme .t-title { color: #475569; }
+body.light-theme .t-body { color: #047857; }
+body.light-theme .floating-card { background: #fff; box-shadow: 0 15px 40px rgba(244, 63, 94, 0.15); }

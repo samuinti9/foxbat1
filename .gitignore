@@ -1,0 +1,37 @@
+/.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+.env
+*.pdf
+.pytest_cache/
+.vscode/
+/.mypy_cache/
+# Databases
+flights.db
+*.db
+*.sqlite
+
+# Big Installer Executables
+OllamaSetup.exe
+*.exe
+
+# Virtual Environment
+venv/
+ENV/
+env/
+
+# Python Cache/Compiled
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment Variables & Secrets
+.env
+
+# OS-generated files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FOXBAT — Strategic Intelligence Platform</title>
+  <meta name="description" content="Real-time global flight tracking and domain awareness powered by FOXBAT Intelligence Engine.">
+  <link rel="stylesheet" href="/static/css/foxbat.css?v=1">
+  <style>
+    body { overflow-x: hidden; }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 8%;
+      padding-top: 80px;
+      position: relative;
+    }
+
+    .hero__eyebrow {
+      margin-bottom: 24px;
+      animation: slide-up 0.6s ease both;
+    }
+
+    .hero__title {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -1px;
+      margin-bottom: 24px;
+      animation: slide-up 0.6s 0.1s ease both;
+    }
+
+    .hero__title span {
+      color: transparent;
+      -webkit-text-stroke: 1px var(--col-cyan);
+    }
+
+    .hero__desc {
+      font-size: 1.1rem;
+      color: var(--col-muted);
+      max-width: 540px;
+      margin-bottom: 40px;
+      line-height: 1.7;
+      animation: slide-up 0.6s 0.2s ease both;
+    }
+
+    .hero__cta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      animation: slide-up 0.6s 0.3s ease both;
+    }
+
+    /* ── FLOATING VISUAL ── */
+    .hero-visual {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .radar-orb {
+      width: 500px;
+      height: 500px;
+      position: relative;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .radar-orb__ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .radar-orb__ring:nth-child(1) { width: 100%; height: 100%; border-color: rgba(34,211,238,0.08); }
+    .radar-orb__ring:nth-child(2) { width: 75%; height: 75%; border-color: rgba(34,211,238,0.12); }
+    .radar-orb__ring:nth-child(3) { width: 50%; height: 50%; border-color: rgba(34,211,238,0.2); }
+    .radar-orb__ring:nth-child(4) { width: 25%; height: 25%; background: rgba(34,211,238,0.05); border-color: rgba(34,211,238,0.3); }
+
+    .radar-orb__sweep {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, transparent 80%, rgba(34,211,238,0.2) 100%);
+      animation: rotate-slow 4s linear infinite;
+    }
+
+    .radar-orb__dot {
+      position: absolute;
+      width: 6px; height: 6px;
+      background: var(--col-cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--col-cyan);
+    }
+
+    .radar-orb__dot:nth-child(5)  { top: 20%; left: 60%; }
+    .radar-orb__dot:nth-child(6)  { top: 55%; left: 75%; }
+    .radar-orb__dot:nth-child(7)  { top: 70%; left: 35%; }
+    .radar-orb__dot:nth-child(8)  { top: 35%; left: 25%; animation: glow-pulse 1.5s infinite; }
+    .radar-orb__dot:nth-child(9)  { top: 80%; left: 65%; background: var(--col-amber); box-shadow: 0 0 12px var(--col-amber); }
+    .radar-orb__dot:nth-child(10) { top: 45%; left: 50%; background: var(--col-red); box-shadow: 0 0 12px var(--col-red); animation: glow-pulse 0.8s infinite; }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+      display: flex;
+      gap: 40px;
+      padding: 40px 8%;
+      border-top: 1px solid var(--glass-border);
+      border-bottom: 1px solid var(--glass-border);
+      background: rgba(10,17,40,0.5);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+    }
+
+    .stats-row__item { display: flex; flex-direction: column; gap: 4px; }
+    .stats-row__num { font-family: var(--font-display); font-size: 2rem; font-weight: 900; color: var(--col-cyan); }
+    .stats-row__lbl { font-size: 0.7rem; color: var(--col-muted); letter-spacing: 1px; }
+
+    /* ── FEATURES ── */
+    .features {
+      padding: 80px 8%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .feature-card {
+      padding: 30px;
+      transition: var(--t-med);
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(34,211,238,0.2);
+    }
+
+    .feature-card__icon {
+      width: 48px; height: 48px;
+      border-radius: var(--r-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      background: rgba(34,211,238,0.08);
+      border: 1px solid rgba(34,211,238,0.15);
+    }
+
+    .feature-card__title {
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      letter-spacing: 1.5px;
+      color: var(--col-text);
+      margin-bottom: 10px;
+    }
+
+    .feature-card__desc {
+      font-size: 0.85rem;
+      color: var(--col-muted);
+      line-height: 1.6;
+    }
+
+
+    /* ── FOOTER ── */
+    .footer {
+      padding: 40px 8%;
+      border-top: 1px solid var(--glass-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer__copy {
+      font-size: 0.75rem;
+      color: var(--col-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* ── ALERT CARD ── */
+    .alert-card {
+      position: absolute;
+      bottom: 20px;
+      left: 30px;
+      padding: 16px 20px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      min-width: 280px;
+      animation: slide-up 0.5s ease;
+    }
+
+    .alert-card__icon { font-size: 1.6rem; }
+    .alert-card__title { font-family: var(--font-display); font-size: 0.65rem; color: var(--col-red); letter-spacing: 1px; }
+    .alert-card__sub   { font-size: 0.7rem; color: var(--col-text); font-family: var(--font-mono); margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <!-- NAV -->
+  <nav class="o-nav">
+    <a href="/" class="o-nav__logo">FOXBAT SENTINEL</a>
+    <div class="o-nav__links">
+       <a href="/tactical-data" class="o-nav__link">TACTICAL DATA</a>
+      <a href="/analytics" class="o-nav__link">ANALYTICS</a>
+      <a href="/radar" class="btn btn-outline" style="font-size:0.65rem; padding:8px 20px;">OPEN RADAR →</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero__eyebrow">
+      <span class="badge badge-green"><span class="dot-live"></span>LIVE — UPLINK SECURED</span>
+    </div>
+    <h1 class="hero__title">
+      FOXBAT<br><span>SENTINEL</span><br>INTELLIGENCE
+    </h1>
+    <p class="hero__desc">
+      Advanced ADS-B signal processing. Real-time tactical sector analytics.
+      Predictive threat vectoring. The ultimate command and control interface.
+    </p>
+    <div class="hero__cta">
+      <a href="/radar" class="btn btn-primary">DEPLOY RADAR ARRAY →</a>
+      <a href="/analytics" class="btn btn-ghost">TACTICAL DATA HUB</a>
+    </div>
+
+    <!-- Radar orb -->
+    <div class="hero-visual" aria-hidden="true">
+      <div class="radar-orb">
+        <div class="radar-orb__ring"></div>
+        <div class="radar-orb__ring"></div>
+        <div class="radar-orb__ring"></div>
+        <div class="radar-orb__ring"></div>
+        <div class="radar-orb__sweep"></div>
+        <div class="radar-orb__dot"></div>
+        <div class="radar-orb__dot"></div>
+        <div class="radar-orb__dot"></div>
+        <div class="radar-orb__dot"></div>
+        <div class="radar-orb__dot"></div>
+        <div class="radar-orb__dot"></div>
+      </div>
+
+      <!-- Alert card -->
+      <div class="card alert-card">
+        <div class="alert-card__icon">🚨</div>
+        <div>
+          <div class="alert-card__title">SQUAWK 7700 DETECTED</div>
+          <div class="alert-card__sub" id="alert-callsign">AFR124 — FL120 DESCENDING</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stats-row__item">
+      <span class="stats-row__num">12,400+</span>
+      <span class="stats-row__lbl">Aircraft Tracked Daily</span>
+    </div>
+    <div class="stats-row__item">
+      <span class="stats-row__num">180+</span>
+      <span class="stats-row__lbl">Countries Covered</span>
+    </div>
+    <div class="stats-row__item">
+      <span class="stats-row__num">10s</span>
+      <span class="stats-row__lbl">Refresh Interval</span>
+    </div>
+    <div class="stats-row__item">
+      <span class="stats-row__num">99.8%</span>
+      <span class="stats-row__lbl">Uplink Reliability</span>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section style="padding: 80px 8% 0;">
+    <div class="section-label">SYSTEM CAPABILITIES</div>
+    <div class="features" style="padding: 0; margin-top: 0;">
+      <div class="card feature-card card-scan">
+        <div class="feature-card__icon">📡</div>
+        <div class="feature-card__title">ADS-B TELEMETRY</div>
+        <div class="feature-card__desc">Live ADS-B data from OpenSky Network. Real positions, headings, altitudes, and squawk codes updated every 10 seconds.</div>
+      </div>
+
+      <div class="card feature-card">
+        <div class="feature-card__icon">⚠️</div>
+        <div class="feature-card__title">THREAT DETECTION</div>
+        <div class="feature-card__desc">Automatic TCAS alert detection for Squawk 7700, 7600 and 7500. DEFCON-style threat level visualizations in real time.</div>
+      </div>
+      <div class="card feature-card">
+        <div class="feature-card__icon">📊</div>
+        <div class="feature-card__title">ANALYTICS HUB</div>
+        <div class="feature-card__desc">Historical flight analysis, altitude distribution charts, speed histograms, and per-country traffic breakdowns.</div>
+      </div>
+      <div class="card feature-card">
+        <div class="feature-card__icon">🛰️</div>
+        <div class="feature-card__title">GEOFENCE SYSTEM</div>
+        <div class="feature-card__desc">Right-click to deploy geofence zones. Automatic incursion alerts with voice synthesis when aircraft enter restricted airspace.</div>
+      </div>
+      <div class="card feature-card">
+        <div class="feature-card__icon">🔮</div>
+        <div class="feature-card__title">PREDICTIVE PATH</div>
+        <div class="feature-card__desc">15-minute flight path predictions using heading and velocity vectors. Visualised with a live Blackbox telemetry chart per aircraft.</div>
+      </div>
+    </div>
+  </section>
+
+
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <span class="footer__copy">© 2026 FOXBAT SENTINEL INTELLIGENCE — CLASSIFIED LEVEL IV</span>
+    <div style="display:flex; gap:16px;">
+      <a href="/radar" class="o-nav__link">RADAR</a>
+      <a href="/analytics" class="o-nav__link">ANALYTICS</a>
+    </div>
+  </footer>
+
+  <script>
+    const callsigns = ['AFR124', 'UAE501', 'IGO456', 'BAW717', 'SQ321', 'DLH409'];
+
+    // Cycle alert card
+    let ci = 0;
+    setInterval(() => {
+      ci = (ci + 1) % callsigns.length;
+      document.getElementById('alert-callsign').textContent = `${callsigns[ci]} — FL${Math.floor(Math.random()*400+50)} ${Math.random()>0.5?'CLIMBING':'DESCENDING'}`;
+    }, 3000);
+  </script>
+</body>
+</html>

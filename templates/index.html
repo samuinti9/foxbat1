@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FOXBAT — Mission Control Radar</title>
+  <meta name="description" content="Live global flight tracking mission control. Real-time ADS-B surveillance.">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/static/css/foxbat.css?v=1">
+  <style>
+    body { overflow: hidden; }
+
+    /* ── MAP FULL SCREEN ── */
+    #map {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* ── HUD LAYER ── */
+    #hud {
+      position: absolute;
+      inset: 0;
+      z-index: 100;
+      pointer-events: none;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      grid-template-columns: auto 1fr auto;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    #hud > * { pointer-events: auto; }
+
+    /* ── TOP BAR ── */
+    #top-bar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      pointer-events: auto;
+    }
+
+
+    /* ── LEFT WING ── */
+    #left-wing {
+      grid-row: 2;
+      grid-column: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 250px;
+      pointer-events: auto;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    /* ── RIGHT WING ── */
+    #right-wing {
+      grid-row: 2;
+      grid-column: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 16px;
+      pointer-events: auto;
+    }
+
+    /* ── SECTOR JUMP & MAP GRID ── */
+    .sector-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .layer-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 4px;
+    }
+
+    /* ── SECTOR BTNS ── */
+    .sector-btn {
+      width: 100%;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--r-sm);
+      color: var(--col-text);
+      font-family: var(--font-display);
+      font-size: 0.5rem;
+      letter-spacing: 0.5px;
+      padding: 6px 4px;
+      cursor: pointer;
+      transition: var(--t-fast);
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sector-btn:hover {
+      background: rgba(34,211,238,0.08);
+      border-color: rgba(34,211,238,0.3);
+      color: var(--col-cyan);
+    }
+
+    /* ── MISSION LOG ── */
+    #mission-log {
+      height: 120px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 0.58rem;
+      line-height: 1.8;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    #mission-log::-webkit-scrollbar { width: 3px; }
+    #mission-log::-webkit-scrollbar-thumb { background: var(--col-dim); border-radius: 3px; }
+
+    /* ── STAT TILES ── */
+    .stat-tiles {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 12px;
+    }
+
+    .stat-tile { display: flex; flex-direction: column; gap: 2px; }
+    .stat-tile__lbl { font-family: var(--font-mono); font-size: 0.45rem; color: var(--col-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .stat-tile__val { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; color: var(--col-cyan); }
+
+
+    /* ── FLIGHT DETAIL PANEL ── */
+
+    /* ── FLIGHT DETAIL PANEL ── */
+    #flight-details-panel {
+      width: 300px;
+      background: var(--glass-bg);
+      -webkit-backdrop-filter: var(--glass-blur);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--r-md);
+      padding: 20px;
+      box-shadow: var(--glass-shadow);
+      overflow-y: auto;
+      animation: slide-up 0.3s ease;
+      z-index: 1000;
+    }
+
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .detail-stat__lbl { font-family: var(--font-mono); font-size: 0.48rem; color: var(--col-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .detail-stat__val { font-family: var(--font-mono); font-size: 0.9rem; font-weight: 700; color: var(--col-text); margin-top: 2px; }
+
+    /* ── SETTINGS MODAL ── */
+    #settings-modal {
+      position: fixed; inset: 0;
+      z-index: 10010;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(2,6,23,0.85);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+    }
+
+    /* ── STARTUP MODAL ── */
+    #startup-modal {
+      position: fixed; inset: 0;
+      z-index: 10020;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 50% 40%, rgba(34,211,238,0.06) 0%, #020617 70%);
+    }
+
+    .startup-card {
+      text-align: center;
+      max-width: 500px;
+      width: 90%;
+      padding: 50px 40px;
+      animation: slide-up 0.6s ease;
+    }
+
+    .startup-title {
+      font-family: var(--font-display);
+      font-size: 3.5rem;
+      font-weight: 900;
+      letter-spacing: 12px;
+      color: var(--col-cyan);
+      text-shadow: 0 0 40px rgba(34,211,238,0.4);
+      margin-bottom: 8px;
+    }
+
+    .startup-sub {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 4px;
+      color: var(--col-muted);
+      margin-bottom: 40px;
+    }
+
+    .mode-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .mode-btn {
+      padding: 24px 16px;
+      border-radius: var(--r-md);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--glass-border);
+      color: var(--col-text);
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: var(--t-med);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mode-btn__icon { font-size: 2rem; }
+
+    .mode-btn:hover {
+      background: rgba(34,211,238,0.08);
+      border-color: var(--col-cyan);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 0 20px rgba(34,211,238,0.15);
+    }
+
+    /* Leaflet overrides */
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+      background: var(--col-bg-1) !important;
+      color: var(--col-text) !important;
+      border: 1px solid var(--glass-border) !important;
+      box-shadow: var(--glass-shadow) !important;
+    }
+
+    .plane-label-wrapper {
+      background: var(--glass-bg) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+      backdrop-filter: blur(8px) !important;
+      border: 1px solid var(--glass-border) !important;
+      border-radius: var(--r-sm) !important;
+      color: var(--col-text) !important;
+      font-family: var(--font-mono) !important;
+      font-size: 0.6rem !important;
+      padding: 4px 8px !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5) !important;
+      white-space: nowrap !important;
+    }
+
+    .plane-label-wrapper::before { display: none !important; }
+
+    .leaflet-container { background: #020617; }
+    .leaflet-tile { filter: brightness(0.9) saturate(0.7); }
+
+    .mini-label, .mini-label-ocean {
+      background: rgba(2,6,23,0.85) !important;
+      border: 1px solid var(--glass-border) !important;
+      color: var(--col-muted) !important;
+      font-family: var(--font-mono) !important;
+      font-size: 0.55rem !important;
+      padding: 2px 6px !important;
+      border-radius: 3px !important;
+      box-shadow: none !important;
+    }
+
+    .mini-label::before, .mini-label-ocean::before { display: none !important; }
+
+    .fir-label {
+      font-family: var(--font-display) !important;
+      font-size: 0.55rem !important;
+      color: rgba(255,255,255,0.1) !important;
+      letter-spacing: 2px !important;
+      text-transform: uppercase !important;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    /* Search input */
+    #search-bar {
+      background: transparent;
+      border: none;
+      color: var(--col-text);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      outline: none;
+      width: 200px;
+    }
+
+    #search-bar::placeholder { color: var(--col-muted); }
+  </style>
+</head>
+<body class="mission-ready card-scan">
+<div class="scan-line"></div>
+<div class="crosshair ch-tl"></div>
+<div class="crosshair ch-tr"></div>
+<div class="crosshair ch-bl"></div>
+<div class="crosshair ch-br"></div>
+
+<!-- ════════════════════ STARTUP MODAL ════════════════════ -->
+<div id="startup-modal">
+  <div class="card startup-card">
+    <div class="startup-title">FOXBAT SENTINEL</div>
+    <div class="startup-sub">ADVANCED INTELLIGENCE ENGINE</div>
+    <div class="mode-grid">
+      <button class="mode-btn" onclick="startMission('global')">
+        <span class="mode-btn__icon">🌍</span>GLOBAL SURVEILLANCE
+      </button>
+      <button class="mode-btn" onclick="startMission('tactical')">
+        <span class="mode-btn__icon">🎯</span>TACTICAL SECTOR
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ SETTINGS MODAL ════════════════════ -->
+<div id="settings-modal" class="hidden">
+  <div class="card" style="width:480px; padding:32px;">
+    <div class="module-head">
+      <span style="font-family:var(--font-display); color:var(--col-cyan); font-size:0.9rem; letter-spacing:3px;">SYSTEM CONFIG</span>
+      <button onclick="toggleSettings()" style="background:none;border:none;color:var(--col-red);font-size:1.5rem;cursor:pointer;">×</button>
+    </div>
+
+    <div class="section-label">SECURITY PROTOCOLS</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px;">
+      <label style="display:flex;justify-content:space-between;align-items:center; padding:12px;background:rgba(255,255,255,0.03);border-radius:var(--r-sm);border:1px solid var(--glass-border);">
+        <span style="font-size:0.65rem;color:var(--col-muted);">VIP MASKING</span>
+        <input type="checkbox" id="cfg-mask" onchange="applySettings()">
+      </label>
+      <label style="display:flex;justify-content:space-between;align-items:center; padding:12px;background:rgba(255,255,255,0.03);border-radius:var(--r-sm);border:1px solid var(--glass-border);">
+        <span style="font-size:0.65rem;color:var(--col-muted);">ANTI-SPOOFING</span>
+        <input type="checkbox" id="cfg-spoof" checked onchange="applySettings()">
+      </label>
+    </div>
+
+    <div class="section-label">TACTICAL DRILLS</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px;">
+      <button onclick="simulateIncursion('7700')" class="btn btn-danger" style="padding:10px;font-size:0.6rem;">7700 DRILL</button>
+      <button onclick="simulateIncursion('7500')" class="btn" style="padding:10px;font-size:0.6rem;color:var(--col-purple);border:1px solid rgba(167,139,250,0.4);">7500 DRILL</button>
+      <button onclick="simulateIncursion('GEOFENCE')" class="btn btn-ghost" style="padding:10px;font-size:0.6rem;">GEOFENCE</button>
+    </div>
+
+    <div class="section-label">SYSTEM STATUS</div>
+    <div style="padding:14px;background:rgba(255,255,255,0.02);border-radius:var(--r-sm);border:1px solid var(--glass-border);margin-bottom:24px;">
+      <div style="font-family:var(--font-mono);font-size:0.65rem;display:flex;justify-content:space-between;">
+        <span style="color:var(--col-muted);">SECURE UPLINK</span>
+        <span style="color:var(--col-green);">ESTABLISHED</span>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:0.65rem;display:flex;justify-content:space-between;margin-top:8px;">
+        <span style="color:var(--col-muted);">AI CREDENTIALS</span>
+        <span style="color:var(--col-amber);">SERVER-SIDE ONLY</span>
+      </div>
+    </div>
+
+    <button onclick="toggleSettings()" class="btn btn-primary" style="width:100%;">CLOSE CONFIGURATION</button>
+  </div>
+</div>
+
+<!-- ════════════════════ MAP ════════════════════ -->
+<div id="map"></div>
+
+<!-- ════════════════════ HUD ════════════════════ -->
+<div id="hud">
+
+  <!-- TOP BAR -->
+  <div id="top-bar">
+    <!-- Logo pill -->
+    <div class="hud-pill">
+      <span style="font-size:1rem;">🦇</span>
+      <span style="font-family:var(--font-display);font-size:0.75rem;color:var(--col-cyan);letter-spacing:4px;">FOXBAT SENTINEL</span>
+    </div>
+
+    <!-- Search -->
+    <div class="hud-pill" style="flex:1;max-width:360px;">
+      <span style="color:var(--col-muted);font-size:0.9rem;">🔍</span>
+      <input type="text" id="search-bar" placeholder="SEARCH CALLSIGN OR COUNTRY...">
+    </div>
+
+    <!-- Clock & Status -->
+    <div class="hud-pill" style="margin-left:auto;gap:20px;">
+      <div class="dot-live"></div>
+      <span id="live-clock" style="font-family:var(--font-mono);font-size:0.75rem;color:var(--col-text);">00:00:00</span>
+      <span style="font-family:var(--font-mono);font-size:0.6rem;color:var(--col-muted);">UTC</span>
+    </div>
+
+    <!-- Actions -->
+    <button onclick="toggleSettings()" class="btn btn-ghost" style="padding:8px 16px;font-size:0.6rem;">⚙ SETTINGS</button>
+    <a href="/" class="btn btn-danger" style="padding:8px 16px;font-size:0.6rem;">⬛ EXIT</a>
+  </div>
+
+  <!-- LEFT WING -->
+  <div id="left-wing">
+    <!-- SECTOR JUMP -->
+    <div class="hud-panel">
+      <div class="module-head" style="margin-bottom:8px; padding-bottom:6px;">
+        <span class="module-title">SECTOR JUMP</span>
+        <div class="dot-live"></div>
+      </div>
+      <div class="sector-grid">
+        <button class="sector-btn" onclick="jumpTo(20.59, 78.96)">📍 INDIA</button>
+        <button class="sector-btn" onclick="jumpTo(25.20, 55.27)">📍 M. EAST</button>
+        <button class="sector-btn" onclick="jumpTo(37.09, -95.71)">📍 USA</button>
+        <button class="sector-btn" onclick="jumpTo(55.75, 37.62)">📍 RUSSIA</button>
+      </div>
+    </div>
+
+    <!-- MAP LAYER -->
+    <div class="hud-panel">
+      <div class="module-head" style="margin-bottom:8px; padding-bottom:6px;">
+        <span class="module-title">MAP LAYER</span>
+      </div>
+      <div class="layer-grid">
+        <button class="sector-btn" onclick="switchTheme('dark')">🌑 DARK</button>
+        <button class="sector-btn" onclick="switchTheme('sat')">🛰️ SAT</button>
+        <button class="sector-btn" onclick="switchTheme('light')">☀️ LIGHT</button>
+      </div>
+    </div>
+
+    <!-- TELEMETRY -->
+    <div class="hud-panel">
+      <div class="module-head" style="margin-bottom:6px; padding-bottom:4px;">
+        <span class="module-title">TELEMETRY</span>
+      </div>
+      <div class="stat-tiles">
+        <div class="stat-tile">
+          <div class="stat-tile__lbl">Targets</div>
+          <div class="stat-tile__val" id="stat-count">---</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile__lbl">Avg Speed</div>
+          <div class="stat-tile__val" id="stat-speed">---</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile__lbl">Avg Alt</div>
+          <div class="stat-tile__val" id="stat-alt">---</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile__lbl">Threat</div>
+          <div class="stat-tile__val" id="stat-threat" style="color:var(--col-green);font-size:0.8rem;">LOW</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MISSION LOG -->
+    <div class="hud-panel" style="display:flex; flex-direction:column;">
+      <div class="module-head" style="margin-bottom:8px; padding-bottom:6px;">
+        <span class="module-title">MISSION LOG</span>
+        <span style="font-family:var(--font-mono); font-size:0.48rem; color:var(--col-muted);">ENCRYPTED</span>
+      </div>
+      <div id="mission-log"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT WING (detail panel) -->
+  <div id="right-wing">
+    <!-- A10 VIRTUAL ASSISTANT -->
+    <div id="a10-terminal" class="hud-panel" style="width:300px; margin-bottom:16px; position:relative;">
+      <div class="module-head" style="margin-bottom:10px; padding-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span class="module-title" style="color:var(--col-cyan);">WARTHOG (A10) // INTEL_ASSISTANT</span>
+          <div class="ai-status-dot"></div>
+        </div>
+        <button id="btn-a10-mic" class="btn btn-ghost" style="padding:4px 8px; font-size:1rem;" onclick="A10.listen()" title="Click or Press Spacebar to Talk">🎤</button>
+      </div>
+      <div class="a10-waveform" id="a10-voice-waves">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div id="a10-transcript" style="font-family:var(--font-mono); font-size:0.55rem; color:var(--col-muted); line-height:1.5; min-height:40px;">
+        INITIATING WARTHOG (A10) PROTOCOL...
+      </div>
+    </div>
+
+    <!-- Flight Detail Panel -->
+    <div id="flight-details-panel" class="hud-panel hidden" style="width:300px;overflow-y:auto;max-height:calc(100vh - 400px);">
+      <div class="module-head" style="margin-bottom:16px;padding-bottom:12px;">
+        <span class="module-title">TARGET INTEL</span>
+        <button onclick="closeDetails()" style="background:none;border:none;color:var(--col-red);cursor:pointer;font-size:1rem;">×</button>
+      </div>
+      <div id="details-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ENGINE SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/static/js/main.js?v=26"></script>
+
+<script>
+  // Live Clock
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('live-clock').textContent = now.toUTCString().split(' ')[4];
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  function toggleSettings() {
+    document.getElementById('settings-modal').classList.toggle('hidden');
+  }
+
+
+  // KGB Logic removed.
+
+</script>
+</body>
+</html>
