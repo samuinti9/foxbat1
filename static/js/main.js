@@ -20,6 +20,19 @@ let missionEvents = [];
 let cmdHistory = [];
 let cmdHistoryIndex = -1;
 
+
+// --- UNIFIED VOICE SELECTOR ---
+function getTacticalVoice() {
+    const voices = window.speechSynthesis.getVoices();
+    // Prioritize Microsoft David for a consistent robotic military tone if available on the system
+    const prioritizedKeywords = ['Microsoft David', 'Google UK English Male', 'Male', 'en-GB', 'en-US'];
+    for (let keyword of prioritizedKeywords) {
+        const found = voices.find(v => v.name.includes(keyword) || v.lang.includes(keyword));
+        if (found) return found;
+    }
+    return null;
+}
+
 // --- A10 SYSTEM ENGINE ---
 const A10 = {
     isSpeaking: false,
@@ -141,28 +154,34 @@ const A10 = {
         const msg = new SpeechSynthesisUtterance(text);
         msg.rate = 0.95;
         msg.pitch = 0.8;
-        
-        // Find a cool robotic voice if possible
-        const voices = window.speechSynthesis.getVoices();
-        const techVoice = voices.find(v => v.name.includes('Google UK English Male') || v.name.includes('Microsoft David'));
-        if (techVoice) msg.voice = techVoice;
 
-        msg.onstart = () => {
-            this.isSpeaking = true;
-            if (this.wavesEl) this.wavesEl.classList.add('active');
-            if (this.transcriptEl) {
-                const lines = text.toUpperCase().split('.').map(l => l.trim()).filter(l => l.length > 0);
-                const formatted = lines.map(l => `<div style="margin-bottom: 6px; display: flex; gap: 8px; line-height: 1.4;"><span style="color:var(--col-cyan);">></span> <span>${l}</span></div>`).join('');
-                this.transcriptEl.innerHTML = formatted;
-            }
+        const speakNow = () => {
+            const techVoice = getTacticalVoice();
+            if (techVoice) msg.voice = techVoice;
+
+            msg.onstart = () => {
+                this.isSpeaking = true;
+                if (this.wavesEl) this.wavesEl.classList.add('active');
+                if (this.transcriptEl) {
+                    const lines = text.toUpperCase().split('.').map(l => l.trim()).filter(l => l.length > 0);
+                    const formatted = lines.map(l => `<div style="margin-bottom: 6px; display: flex; gap: 8px; line-height: 1.4;"><span style="color:var(--col-cyan);">></span> <span>${l}</span></div>`).join('');
+                    this.transcriptEl.innerHTML = formatted;
+                }
+            };
+
+            msg.onend = () => {
+                this.isSpeaking = false;
+                if (this.wavesEl && !this.isListening) this.wavesEl.classList.remove('active');
+            };
+
+            window.speechSynthesis.speak(msg);
         };
 
-        msg.onend = () => {
-            this.isSpeaking = false;
-            if (this.wavesEl && !this.isListening) this.wavesEl.classList.remove('active');
-        };
-
-        window.speechSynthesis.speak(msg);
+        if (window.speechSynthesis.getVoices().length === 0) {
+            window.speechSynthesis.onvoiceschanged = speakNow;
+        } else {
+            speakNow();
+        }
     }
 };
 
@@ -1519,15 +1538,7 @@ function announceEmergency(text) {
     utterance.volume = 1.0;
 
     const speakNow = () => {
-        const voices = voiceSynthesis.getVoices();
-        const preferredVoice = voices.find(v => 
-            v.name.includes('Google UK English Male') || 
-            v.name.includes('Microsoft David') || 
-            v.name.includes('Male') ||
-            v.lang.includes('en-GB') ||
-            v.lang.includes('en-US')
-        );
-        
+        const preferredVoice = getTacticalVoice();
         if (preferredVoice) utterance.voice = preferredVoice;
         voiceSynthesis.speak(utterance);
     };
