@@ -72,6 +72,15 @@ function getTacticalVoice() {
     return voices[0] || null;
 }
 
+// Log available voices for debugging (runs once when voices load)
+window.speechSynthesis.onvoiceschanged = () => {
+    const voices = window.speechSynthesis.getVoices();
+    console.log('[A10 VOICE DEBUG] Available voices on this device:');
+    voices.forEach((v, i) => console.log(`  [${i}] ${v.name} (${v.lang}) ${v.localService ? 'LOCAL' : 'REMOTE'}`));
+    const selected = getTacticalVoice();
+    console.log('[A10 VOICE DEBUG] Selected voice:', selected ? selected.name : 'NONE');
+};
+
 // --- A10 SYSTEM ENGINE ---
 const A10 = {
     isSpeaking: false,
@@ -193,8 +202,8 @@ const A10 = {
         window.speechSynthesis.cancel();
 
         const msg = new SpeechSynthesisUtterance(text);
-        msg.rate = 0.9;
-        msg.pitch = 0.6;
+        msg.rate = 0.85;
+        msg.pitch = 0.1;
 
         const speakNow = () => {
             const techVoice = getTacticalVoice();
@@ -1573,8 +1582,8 @@ function announceEmergency(text) {
     voiceSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.pitch = 0.6; 
-    utterance.rate = 0.9;
+    utterance.pitch = 0.1; 
+    utterance.rate = 0.85;
     utterance.volume = 1.0;
 
     const speakNow = () => {
