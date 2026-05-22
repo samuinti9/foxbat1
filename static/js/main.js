@@ -136,7 +136,9 @@ const A10 = {
             processCommand('ZOOM OUT');
         } else if (t.includes('IDENTIFY YOURSELF') || t.includes('WHO ARE YOU')) {
             processCommand('IDENTIFY YOURSELF');
-        } else if (t.includes('HELLO') || t.includes('A10') || t.includes('A-10')) {
+        } else if (t.includes('HEY A10') || t.includes('HEY A-10') || t.includes('HEY A 10') || t.includes('HEY, A10') || t.includes('HEY, A-10')) {
+            processCommand('HEY A10');
+        } else if (t.includes('HELLO') || t.includes('A10') || t.includes('A-10') || t.includes('A 10')) {
             processCommand('HELLO');
         } else if (t.includes('REPORT') || t.includes('STATUS')) {
             processCommand('STATS');
@@ -1318,6 +1320,8 @@ function processCommand(cmd) {
         }
     } else if (cmd === 'IDENTIFY YOURSELF' || cmd === 'WHO ARE YOU') {
         A10.speak("I am A-10. The tactical artificial intelligence core integrated into the FOXBAT SENTINEL platform. I am reporting for active duty. My systems are optimized for real-time intelligence gathering and flight tracking telemetry.");
+    } else if (cmd === 'HEY A10') {
+        A10.speak("I am A-10.");
     } else if (cmd === 'HELLO' || cmd === 'A10' || cmd === 'A-10') {
         A10.speak("Standing by for tasking.");
     } else if (cmd === 'HELP') {
