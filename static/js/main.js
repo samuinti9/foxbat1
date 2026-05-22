@@ -564,17 +564,13 @@ function updateRadar(flights) {
         const isE = (f.squawk === "7700");
         const isS = (f.id === selectedId);
 
-        // --- VOICE ALERT LOGIC ---
+        // --- VOICE ALERT LOGIC (Background updates silent per user request; announced via ANY THREAT command) ---
         if (isE && f.id !== lastSpokenId) {
-            const modelName = getBirdModel(f);
-            A10.speak(`Identified the bogey. Flight ${f.callsign}, ${modelName}. Emergency Squawk 7 7 0 0 detected. Altitude ${Math.round(f.altitude)} meters.`);
             lastSpokenId = f.id;
             logMissionEvent(`EMERGENCY 7700 DETECTED: ${f.callsign}`, "CRITICAL");
         }
 
         if (f.geofence_violation && f.id !== lastSpokenId) {
-            const modelName = getBirdModel(f);
-            A10.speak(`Identified the bogey. Flight ${f.callsign}, ${modelName}. Airspace incursion detected.`);
             lastSpokenId = f.id;
             logMissionEvent(`GEOFENCE INCURSION: ${f.callsign}`, "WARNING");
         }
@@ -1290,9 +1286,10 @@ function processCommand(cmd) {
         if (threats.length > 0) {
             const t = threats[0]._data;
             const model = getBirdModel(t);
-            A10.speak(`Warning. Active threat detected. Flight ${t.callsign}, ${model}, is violating airspace protocols.`);
+            A10.speak(`Identified the bogey. Flight ${t.callsign}, ${model}.`);
         } else {
-            A10.speak("Negative threats. Airspace sectors are currently clear. Scanning all active vectors.");
+            // Do not speak anything when there are no threats per user request ('rest dont')
+            logMissionEvent("SCAN COMPLETE: NO THREATS DETECTED", "INFO");
         }
     } else if (cmd === 'LOCK FASTEST' || cmd === 'FASTEST BOGEY') {
         const flights = Object.values(markers).map(m => m._data).filter(f => f && f.velocity);
