@@ -11,6 +11,20 @@ load_dotenv()
 OPENSKY_USER = os.getenv("OPENSKY_USER")
 OPENSKY_PASSWORD = os.getenv("OPENSKY_PASSWORD")
 
+# Determine DB Path (Vercel serverless environment has a read-only filesystem except for /tmp)
+IS_VERCEL = os.getenv("VERCEL") == "1"
+if IS_VERCEL:
+    DB_PATH = "/tmp/flights.db"
+    # Copy the template flights.db to /tmp if it doesn't exist yet
+    if not os.path.exists(DB_PATH) and os.path.exists("flights.db"):
+        try:
+            import shutil
+            shutil.copy("flights.db", DB_PATH)
+        except Exception as e:
+            print(f"Error copying flights.db to /tmp: {e}")
+else:
+    DB_PATH = "flights.db"
+
 # --- MATH ALGORITHMS FOR TCAS ---
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371.0 # Earth radius in kilometers
@@ -36,7 +50,7 @@ def predict_future_position(lat, lon, heading, velocity_ms, time_seconds=300):
 
 # --- DATABASE SETUP ---
 def init_db():
-    conn = sqlite3.connect('flights.db')
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS flight_stats
                  (timestamp REAL, total_flights INTEGER, avg_speed REAL, avg_altitude REAL)''')
@@ -301,7 +315,7 @@ def log_to_db(data, timestamp):
     avg_speed = (sum(f['velocity'] for f in data) / count) * 3.6
     avg_alt = sum(f['altitude'] for f in data) / count
     
-    conn = sqlite3.connect('flights.db')
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("INSERT INTO flight_stats VALUES (?, ?, ?, ?)", (timestamp, count, avg_speed, avg_alt))
     
