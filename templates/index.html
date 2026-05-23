@@ -338,6 +338,27 @@
         <input type="checkbox" id="cfg-spoof" checked onchange="applySettings()">
       </label>
     </div>
+    
+    <div class="section-label">A10 VOCAL TRANSLATION CONTROLS</div>
+    <div style="padding:12px; background:rgba(255,255,255,0.02); border-radius:var(--r-sm); border:1px solid var(--glass-border); margin-bottom:24px;">
+      <label style="display:block; margin-bottom:8px;">
+        <span style="font-size:0.55rem; color:var(--col-muted); text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:4px;">SELECT VOICE TRANSLATOR</span>
+        <select id="cfg-voice-select" onchange="applyVoiceChange()" style="width:100%; padding:8px; background:rgba(2,6,23,0.9); color:var(--col-text); border:1px solid var(--glass-border); border-radius:var(--r-sm); font-family:var(--font-mono); font-size:0.6rem; outline:none; cursor:pointer;">
+          <option value="">DETECTING TRANSLATOR VOICES...</option>
+        </select>
+      </label>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px;">
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span style="font-size:0.52rem; color:var(--col-muted); text-transform:uppercase; letter-spacing:1px;">PITCH: <span id="lbl-pitch" style="color:var(--col-cyan);">0.75</span></span>
+          <input type="range" id="cfg-voice-pitch" min="0.5" max="1.8" step="0.05" value="0.75" oninput="applyVoiceSettings()" style="width:100%; accent-color:var(--col-cyan); cursor:pointer;">
+        </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span style="font-size:0.52rem; color:var(--col-muted); text-transform:uppercase; letter-spacing:1px;">SPEED / RATE: <span id="lbl-rate" style="color:var(--col-cyan);">0.95</span></span>
+          <input type="range" id="cfg-voice-rate" min="0.5" max="1.8" step="0.05" value="0.95" oninput="applyVoiceSettings()" style="width:100%; accent-color:var(--col-cyan); cursor:pointer;">
+        </label>
+      </div>
+      <button onclick="testSelectedVoice()" class="btn btn-ghost" style="width:100%; margin-top:12px; padding:6px; font-size:0.55rem; border-color:rgba(34,211,238,0.2);">TEST VOICE CONFIGURATION</button>
+    </div>
 
     <div class="section-label">TACTICAL DRILLS</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px;">

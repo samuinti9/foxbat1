@@ -28,6 +28,13 @@ function getTacticalVoice() {
     const voices = window.speechSynthesis.getVoices();
     if (!voices || voices.length === 0) return null;
 
+    // Check if user has explicitly selected a voice from settings
+    const savedVoiceName = localStorage.getItem('foxbat_voice_name');
+    if (savedVoiceName) {
+        const found = voices.find(v => v.name === savedVoiceName);
+        if (found) return found;
+    }
+
     // TIER 1: Known deep male voices by exact name (highest priority)
     // Google remote voices are highest quality; prioritize them
     const tier1 = [
@@ -70,6 +77,90 @@ function getTacticalVoice() {
     return voices[0] || null;
 }
 
+function populateVoiceSelector() {
+    const selector = document.getElementById('cfg-voice-select');
+    if (!selector) return;
+
+    const voices = window.speechSynthesis.getVoices();
+    selector.innerHTML = '';
+
+    if (!voices || voices.length === 0) {
+        const option = document.createElement('option');
+        option.textContent = 'NO VOICES DETECTED';
+        option.value = '';
+        selector.appendChild(option);
+        return;
+    }
+
+    // Sort voices to make English/US/UK voices appear first
+    const sortedVoices = [...voices].sort((a, b) => {
+        const aEn = a.lang.startsWith('en');
+        const bEn = b.lang.startsWith('en');
+        if (aEn && !bEn) return -1;
+        if (!aEn && bEn) return 1;
+        return a.name.localeCompare(b.name);
+    });
+
+    sortedVoices.forEach(voice => {
+        const option = document.createElement('option');
+        option.value = voice.name;
+        option.textContent = `${voice.name} (${voice.lang})${voice.localService ? ' [LOCAL]' : ' [REMOTE]'}`;
+        selector.appendChild(option);
+    });
+
+    // Restore selection
+    const savedName = localStorage.getItem('foxbat_voice_name') || getTacticalVoice()?.name || '';
+    if (savedName) {
+        selector.value = savedName;
+    }
+
+    // Load sliders
+    const savedPitch = localStorage.getItem('foxbat_voice_pitch') || '0.75';
+    const savedRate = localStorage.getItem('foxbat_voice_rate') || '0.95';
+
+    const inputPitch = document.getElementById('cfg-voice-pitch');
+    const inputRate = document.getElementById('cfg-voice-rate');
+    const lblPitch = document.getElementById('lbl-pitch');
+    const lblRate = document.getElementById('lbl-rate');
+
+    if (inputPitch) {
+        inputPitch.value = savedPitch;
+        if (lblPitch) lblPitch.textContent = savedPitch;
+    }
+    if (inputRate) {
+        inputRate.value = savedRate;
+        if (lblRate) lblRate.textContent = savedRate;
+    }
+}
+
+function applyVoiceChange() {
+    const selector = document.getElementById('cfg-voice-select');
+    if (!selector) return;
+    localStorage.setItem('foxbat_voice_name', selector.value);
+}
+
+function applyVoiceSettings() {
+    const inputPitch = document.getElementById('cfg-voice-pitch');
+    const inputRate = document.getElementById('cfg-voice-rate');
+    const lblPitch = document.getElementById('lbl-pitch');
+    const lblRate = document.getElementById('lbl-rate');
+
+    if (inputPitch) {
+        localStorage.setItem('foxbat_voice_pitch', inputPitch.value);
+        if (lblPitch) lblPitch.textContent = inputPitch.value;
+    }
+    if (inputRate) {
+        localStorage.setItem('foxbat_voice_rate', inputRate.value);
+        if (lblRate) lblRate.textContent = inputRate.value;
+    }
+}
+
+function testSelectedVoice() {
+    const selector = document.getElementById('cfg-voice-select');
+    const name = selector ? selector.value : '';
+    A10.speak(`Warthog voice module configured. Testing text to speech interface using ${name || 'default system'} voice.`);
+}
+
 // Log available voices for debugging (runs once when voices load)
 window.speechSynthesis.onvoiceschanged = () => {
     const voices = window.speechSynthesis.getVoices();
@@ -77,7 +168,13 @@ window.speechSynthesis.onvoiceschanged = () => {
     voices.forEach((v, i) => console.log(`  [${i}] ${v.name} (${v.lang}) ${v.localService ? 'LOCAL' : 'REMOTE'}`));
     const selected = getTacticalVoice();
     console.log('[A10 VOICE DEBUG] Selected voice:', selected ? selected.name : 'NONE');
+    populateVoiceSelector();
 };
+
+// Make globally accessible for onclicks
+window.applyVoiceChange = applyVoiceChange;
+window.applyVoiceSettings = applyVoiceSettings;
+window.testSelectedVoice = testSelectedVoice;
 
 // --- A10 SYSTEM ENGINE ---
 const A10 = {
@@ -124,7 +221,8 @@ const A10 = {
         } else {
             console.warn("Speech Recognition API not supported in this browser.");
         }
-
+        
+        populateVoiceSelector();
         console.log("A10 Core Initialized.");
         
         // Setup hotkey (Spacebar) to listen
@@ -200,8 +298,8 @@ const A10 = {
         window.speechSynthesis.cancel();
 
         const msg = new SpeechSynthesisUtterance(text);
-        msg.rate = 0.95;
-        msg.pitch = 0.75;
+        msg.rate = parseFloat(localStorage.getItem('foxbat_voice_rate')) || 0.95;
+        msg.pitch = parseFloat(localStorage.getItem('foxbat_voice_pitch')) || 0.75;
 
         const speakNow = () => {
             const techVoice = getTacticalVoice();
