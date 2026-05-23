@@ -76,41 +76,48 @@ function initCharts(historicalData, liveFlights) {
         });
     }
 
-    // 4. Speed Distribution Pie Chart
+    // 4. Speed Distribution — Bar Histogram
     const ctxSpeed = document.getElementById('chart-speed');
     if (ctxSpeed && !speedChart && liveFlights.length > 0) {
-        const speedBins = [0, 0, 0, 0, 0]; // <200, 200-400, 400-600, 600-800, 800+
-        liveFlights.forEach(f => {
-            const v = f.velocity * 3.6;
-            if (v < 200) speedBins[0]++;
-            else if (v < 400) speedBins[1]++;
-            else if (v < 600) speedBins[2]++;
-            else if (v < 800) speedBins[3]++;
-            else speedBins[4]++;
-        });
-
+        const speedBins = getSpeedBins(liveFlights);
         speedChart = new Chart(ctxSpeed, {
-            type: 'pie',
+            type: 'bar',
             data: {
-                labels: ['<200 km/h', '200-400 km/h', '400-600 km/h', '600-800 km/h', '>800 km/h'],
+                labels: ['<200', '200-400', '400-600', '600-800', '>800'],
                 datasets: [{
+                    label: 'Flights (km/h)',
                     data: speedBins,
-                    backgroundColor: ['#38bdf8', '#4ade80', '#facc15', '#f43f5e', '#a78bfa'],
-                    borderWidth: 0
+                    backgroundColor: ['#38bdf8','#4ade80','#facc15','#f43f5e','#a78bfa'],
+                    borderWidth: 0,
+                    borderRadius: 4
                 }]
             },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                plugins: { 
-                    legend: { 
-                        position: 'right', 
-                        labels: { color: '#64748b', font: { size: 10 } } 
-                    } 
-                } 
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    x: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { display: false } }
+                }
             }
         });
     }
+}
+
+function getSpeedBins(flights) {
+    const bins = [0, 0, 0, 0, 0];
+    flights.forEach(f => {
+        // velocity may be m/s (OpenSky) or already km/h (simulated)
+        // simulated sends 150-900 range directly as km/h-like values
+        const v = f.velocity > 10 ? f.velocity : f.velocity * 3.6;
+        if (v < 200) bins[0]++;
+        else if (v < 400) bins[1]++;
+        else if (v < 600) bins[2]++;
+        else if (v < 800) bins[3]++;
+        else bins[4]++;
+    });
+    return bins;
 }
 
 function updateCharts(historicalData, liveFlights) {
@@ -118,49 +125,38 @@ function updateCharts(historicalData, liveFlights) {
         initCharts(historicalData, liveFlights);
         return;
     }
-    
-    // Update Traffic
+
+    // Update Traffic Timeline
     trafficChart.data.labels = historicalData.map(d => d.time);
     trafficChart.data.datasets[0].data = historicalData.map(d => d.total_flights);
     trafficChart.update('none');
 
-    // Update Country
-    if (countryChart && liveFlights.length > 0) {
+    // Update Country — destroy & recreate so labels refresh
+    if (liveFlights.length > 0) {
         const countryCounts = {};
-        liveFlights.forEach(f => countryCounts[f.country] = (countryCounts[f.country] || 0) + 1);
-        const topCountries = Object.entries(countryCounts).sort((a,b)=>b[1]-a[1]).slice(0, 5);
-        countryChart.data.labels = topCountries.map(c => c[0]);
-        countryChart.data.datasets[0].data = topCountries.map(c => c[1]);
-        countryChart.update('none');
-    }
+        liveFlights.forEach(f => countryCounts[f.country || 'Unknown'] = (countryCounts[f.country || 'Unknown'] || 0) + 1);
+        const topCountries = Object.entries(countryCounts).sort((a,b)=>b[1]-a[1]).slice(0, 7);
+        if (countryChart) {
+            countryChart.data.labels = topCountries.map(c => c[0]);
+            countryChart.data.datasets[0].data = topCountries.map(c => c[1]);
+            countryChart.update();
+        }
 
-    // Update Altitude
-    if (altitudeChart && liveFlights.length > 0) {
-        const bins = [0, 0, 0, 0, 0];
+        // Update Altitude Histogram
+        const altBins = [0,0,0,0,0];
         liveFlights.forEach(f => {
-            if (f.altitude < 2000) bins[0]++;
-            else if (f.altitude < 5000) bins[1]++;
-            else if (f.altitude < 10000) bins[2]++;
-            else if (f.altitude < 12000) bins[3]++;
-            else bins[4]++;
+            const alt = f.altitude || 0;
+            if (alt < 2000) altBins[0]++;
+            else if (alt < 5000) altBins[1]++;
+            else if (alt < 10000) altBins[2]++;
+            else if (alt < 12000) altBins[3]++;
+            else altBins[4]++;
         });
-        altitudeChart.data.datasets[0].data = bins;
-        altitudeChart.update('none');
-    }
+        if (altitudeChart) { altitudeChart.data.datasets[0].data = altBins; altitudeChart.update('none'); }
 
-    // Update Speed
-    if (speedChart && liveFlights.length > 0) {
-        const speedBins = [0, 0, 0, 0, 0];
-        liveFlights.forEach(f => {
-            const v = f.velocity * 3.6;
-            if (v < 200) speedBins[0]++;
-            else if (v < 400) speedBins[1]++;
-            else if (v < 600) speedBins[2]++;
-            else if (v < 800) speedBins[3]++;
-            else speedBins[4]++;
-        });
-        speedChart.data.datasets[0].data = speedBins;
-        speedChart.update('none');
+        // Update Speed Histogram
+        const speedBins = getSpeedBins(liveFlights);
+        if (speedChart) { speedChart.data.datasets[0].data = speedBins; speedChart.update('none'); }
     }
 }
 
