@@ -260,22 +260,36 @@ const A10 = {
         
         // Conversational handling when waiting for sector input
         if (this.waitingForSector) {
-            const sectors = ['INDIA', 'MIDDLE EAST', 'USA', 'US', 'RUSSIA'];
+            console.log('[A10 SECTOR] Waiting for sector, heard:', JSON.stringify(t));
+
+            // Fuzzy sector matching — handles many speech recognition variants
+            const sectorMap = [
+                { key: 'INDIA',       aliases: ['INDIA', 'INDIAN'] },
+                { key: 'MIDDLE EAST', aliases: ['MIDDLE EAST', 'MIDEAST', 'MID EAST', 'MIDDLE', 'DUBAI', 'GULF'] },
+                { key: 'USA',         aliases: ['USA', 'US', 'UNITED STATES', 'AMERICA', 'AMERICAN', 'STATES'] },
+                { key: 'RUSSIA',      aliases: ['RUSSIA', 'RUSSIAN', 'MOSCOW'] },
+                { key: 'DELHI',       aliases: ['DELHI', 'NEW DELHI'] },
+                { key: 'MUMBAI',      aliases: ['MUMBAI', 'BOMBAY'] },
+                { key: 'LONDON',      aliases: ['LONDON', 'UK', 'ENGLAND', 'BRITAIN'] },
+                { key: 'SINGAPORE',   aliases: ['SINGAPORE'] },
+            ];
+
             let matchedSector = null;
-            for (const s of sectors) {
-                if (t.includes(s)) {
-                    matchedSector = s === 'US' ? 'USA' : s;
+            for (const entry of sectorMap) {
+                if (entry.aliases.some(alias => t.includes(alias))) {
+                    matchedSector = entry.key;
                     break;
                 }
             }
+
             if (matchedSector) {
                 this.waitingForSector = false;
                 processCommand(`JUMP ${matchedSector}`);
-            } else if (t.includes('CANCEL') || t.includes('ABORT') || t.includes('CLEAR') || t.includes('STOP')) {
+            } else if (t.includes('CANCEL') || t.includes('ABORT') || t.includes('CLEAR') || t.includes('STOP') || t.includes('NOTHING') || t.includes('NEVER MIND')) {
                 this.waitingForSector = false;
-                this.speak("Sector jump cancelled.");
+                this.speak("Sector jump cancelled. Standing by.");
             } else {
-                this.speak("Invalid sector. Choose India, Middle East, USA, or Russia. Or say cancel.", () => {
+                this.speak("I did not catch that sector. Choose India, Middle East, USA, Russia, London, Singapore, Delhi, or Mumbai. Or say cancel.", () => {
                     this.listen();
                 });
             }
@@ -283,9 +297,28 @@ const A10 = {
         }
 
         // Standard commands
-        if (t.includes('SECTOR JUMP') || t.includes('JUMP SECTOR') || t === 'JUMP') {
+        // Debug: log what was heard
+        console.log('[A10 CMD] Heard:', JSON.stringify(t));
+
+        const isSectorJump =
+            t.includes('SECTOR JUMP') ||
+            t.includes('JUMP SECTOR') ||
+            t.includes('JUMP TO SECTOR') ||
+            t.includes('GO TO SECTOR') ||
+            t.includes('SECTOR NAVIGATION') ||
+            t.includes('NAVIGATE SECTOR') ||
+            t.includes('SELECT SECTOR') ||
+            t.includes('SECTOR SELECT') ||
+            t.includes('SWITCH SECTOR') ||
+            t.includes('SECTOR SWITCH') ||
+            t.includes('CHANGE SECTOR') ||
+            t.includes('SECTOR CHANGE') ||
+            t === 'JUMP' ||
+            t === 'SECTOR';
+
+        if (isSectorJump) {
             this.waitingForSector = true;
-            this.speak("Which sector would you like to jump to? India, Middle East, USA, or Russia?", () => {
+            this.speak("Which sector would you like to jump to? Say India, Middle East, USA, or Russia.", () => {
                 this.listen();
             });
         } else if (t.includes('LOCK FASTEST') || t.includes('FASTEST BOGEY') || t === 'FASTEST') {
