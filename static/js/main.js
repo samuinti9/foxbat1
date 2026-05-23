@@ -183,6 +183,7 @@ const A10 = {
     transcriptEl: null,
     wavesEl: null,
     recognition: null,
+    waitingForSector: false,
     
     init() {
         this.transcriptEl = document.getElementById('a10-transcript');
@@ -256,7 +257,38 @@ const A10 = {
     
     processCommand(transcript) {
         const t = transcript.toUpperCase().trim();
-        if (t.includes('LOCK FASTEST') || t.includes('FASTEST BOGEY') || t === 'FASTEST') {
+        
+        // Conversational handling when waiting for sector input
+        if (this.waitingForSector) {
+            const sectors = ['INDIA', 'MIDDLE EAST', 'USA', 'US', 'RUSSIA'];
+            let matchedSector = null;
+            for (const s of sectors) {
+                if (t.includes(s)) {
+                    matchedSector = s === 'US' ? 'USA' : s;
+                    break;
+                }
+            }
+            if (matchedSector) {
+                this.waitingForSector = false;
+                processCommand(`JUMP ${matchedSector}`);
+            } else if (t.includes('CANCEL') || t.includes('ABORT') || t.includes('CLEAR') || t.includes('STOP')) {
+                this.waitingForSector = false;
+                this.speak("Sector jump cancelled.");
+            } else {
+                this.speak("Invalid sector. Choose India, Middle East, USA, or Russia. Or say cancel.", () => {
+                    this.listen();
+                });
+            }
+            return;
+        }
+
+        // Standard commands
+        if (t.includes('SECTOR JUMP') || t.includes('JUMP SECTOR') || t === 'JUMP') {
+            this.waitingForSector = true;
+            this.speak("Which sector would you like to jump to? India, Middle East, USA, or Russia?", () => {
+                this.listen();
+            });
+        } else if (t.includes('LOCK FASTEST') || t.includes('FASTEST BOGEY') || t === 'FASTEST') {
             processCommand('LOCK FASTEST');
         } else if (t.includes('LOCK HIGHEST') || t.includes('HIGHEST BOGEY') || t === 'HIGHEST') {
             processCommand('LOCK HIGHEST');
@@ -291,20 +323,20 @@ const A10 = {
         }
     },
 
-    speak(text) {
+    speak(text, callback) {
         if (!sysConfig.voiceEnabled) return;
         
         // Stop current speech
         window.speechSynthesis.cancel();
-
+ 
         const msg = new SpeechSynthesisUtterance(text);
         msg.rate = parseFloat(localStorage.getItem('foxbat_voice_rate')) || 0.95;
         msg.pitch = parseFloat(localStorage.getItem('foxbat_voice_pitch')) || 0.75;
-
+ 
         const speakNow = () => {
             const techVoice = getTacticalVoice();
             if (techVoice) msg.voice = techVoice;
-
+ 
             msg.onstart = () => {
                 this.isSpeaking = true;
                 if (this.wavesEl) this.wavesEl.classList.add('active');
@@ -314,15 +346,16 @@ const A10 = {
                     this.transcriptEl.innerHTML = formatted;
                 }
             };
-
+ 
             msg.onend = () => {
                 this.isSpeaking = false;
                 if (this.wavesEl && !this.isListening) this.wavesEl.classList.remove('active');
+                if (callback) callback();
             };
-
+ 
             window.speechSynthesis.speak(msg);
         };
-
+ 
         if (window.speechSynthesis.getVoices().length === 0) {
             window.speechSynthesis.onvoiceschanged = speakNow;
         } else {
