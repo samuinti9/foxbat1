@@ -20,6 +20,63 @@ let missionEvents = [];
 let cmdHistory = [];
 let cmdHistoryIndex = -1;
 
+let heatmapLayer = null;
+let isHeatmapActive = false;
+let isFIRActive = false;
+let firLayers = [];
+
+const firSectors = [
+    {
+        name: "DELHI FIR",
+        polygon: [[37.0, 74.0], [35.5, 77.0], [30.0, 81.0], [25.0, 81.5], [23.5, 74.0], [24.0, 71.0], [28.5, 69.5], [32.0, 71.5]],
+        center: [28.5, 77.0],
+        color: "#10b981"
+    },
+    {
+        name: "MUMBAI FIR",
+        polygon: [[24.0, 68.0], [23.5, 74.0], [21.0, 76.5], [15.0, 75.0], [12.0, 74.0], [8.0, 71.0], [8.0, 60.0], [20.0, 60.0]],
+        center: [19.0, 72.8],
+        color: "#38bdf8"
+    },
+    {
+        name: "CHENNAI FIR",
+        polygon: [[15.0, 75.0], [21.0, 76.5], [20.0, 84.5], [14.0, 92.0], [6.0, 92.0], [6.0, 77.0], [8.0, 71.0], [12.0, 74.0]],
+        center: [10.0, 78.0],
+        color: "#f59e0b"
+    },
+    {
+        name: "KOLKATA FIR",
+        polygon: [[28.0, 81.0], [29.5, 87.0], [28.0, 92.0], [26.0, 97.0], [20.0, 95.0], [14.0, 92.0], [20.0, 84.5], [25.0, 81.5]],
+        center: [22.6, 88.4],
+        color: "#8b5cf6"
+    },
+    {
+        name: "SINGAPORE FIR",
+        polygon: [[7.0, 98.0], [7.0, 106.0], [4.0, 109.0], [-2.0, 109.0], [-2.0, 100.0], [1.0, 97.0]],
+        center: [1.3, 103.8],
+        color: "#22d3ee"
+    },
+    {
+        name: "PACIFIC-WEST FIR",
+        polygon: [[30.0, 140.0], [30.0, 160.0], [10.0, 165.0], [0.0, 160.0], [0.0, 140.0], [15.0, 135.0]],
+        center: [12.5, 152.5],
+        color: "#64748b"
+    }
+];
+
+function isPointInPolygon(point, vs) {
+    const x = point[0], y = point[1];
+    let inside = false;
+    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        const xi = vs[i][0], yi = vs[i][1];
+        const xj = vs[j][0], yj = vs[j][1];
+        const intersect = ((yi > y) !== (yj > y))
+            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+}
+
 
 // --- UNIFIED VOICE SELECTOR ---
 // Selects the deepest, most authoritative male voice available across all platforms.
@@ -176,6 +233,164 @@ window.applyVoiceChange = applyVoiceChange;
 window.applyVoiceSettings = applyVoiceSettings;
 window.testSelectedVoice = testSelectedVoice;
 
+function toggleHeatmap() {
+    isHeatmapActive = !isHeatmapActive;
+    const btn = document.getElementById('btn-heatmap');
+    
+    if (isHeatmapActive) {
+        if (btn) btn.classList.add('active');
+        logMissionEvent("AIRSPACE TRAFFIC HEATMAP: DEPLOYED", "SUCCESS");
+        A10.speak("Deploying thermal traffic density overlay.");
+        
+        // Initialize heatmap layer
+        if (window.L && window.L.heatLayer) {
+            heatmapLayer = L.heatLayer([], {
+                radius: 30,
+                blur: 15,
+                maxZoom: 10,
+                gradient: {
+                    0.4: 'rgba(34, 211, 238, 0.5)',  // Cyan for low density
+                    0.65: 'rgba(250, 204, 21, 0.7)', // Amber for medium
+                    0.95: 'rgba(244, 63, 94, 0.9)'  // Red for high density
+                }
+            }).addTo(map);
+            
+            // Populate immediately if we have markers
+            updateHeatmapData();
+        } else {
+            console.error("Leaflet.heat library is not loaded.");
+        }
+    } else {
+        if (btn) btn.classList.remove('active');
+        logMissionEvent("AIRSPACE TRAFFIC HEATMAP: OFFLINE", "INFO");
+        A10.speak("Traffic density overlay deactivated.");
+        if (heatmapLayer) {
+            map.removeLayer(heatmapLayer);
+            heatmapLayer = null;
+        }
+    }
+}
+
+function updateHeatmapData() {
+    if (!isHeatmapActive || !heatmapLayer) return;
+    
+    const points = Object.values(markers)
+        .map(m => m._data)
+        .filter(f => f && typeof f.lat === 'number' && typeof f.lon === 'number')
+        .map(f => {
+            let intensity = 0.6;
+            if (f.velocity > 300) intensity += 0.2;
+            if (f.altitude < 5000) intensity += 0.2;
+            return [f.lat, f.lon, intensity];
+        });
+        
+    heatmapLayer.setLatLngs(points);
+}
+
+function toggleFIRStress() {
+    isFIRActive = !isFIRActive;
+    const btn = document.getElementById('btn-fir');
+    
+    if (isFIRActive) {
+        if (btn) btn.classList.add('active');
+        logMissionEvent("FIR BOUNDARY STRESS PROTOCOL: ACTIVE", "SUCCESS");
+        A10.speak("Analyzing sector congestion and flight information region stress levels.");
+        
+        renderFIRStress();
+    } else {
+        if (btn) btn.classList.remove('active');
+        logMissionEvent("FIR BOUNDARY STRESS PROTOCOL: OFFLINE", "INFO");
+        A10.speak("Sector boundary stress analysis terminated.");
+        
+        clearFIRLayers();
+    }
+}
+
+function clearFIRLayers() {
+    firLayers.forEach(l => map.removeLayer(l));
+    firLayers = [];
+}
+
+function renderFIRStress() {
+    if (!isFIRActive) return;
+    
+    // Clear old layers
+    clearFIRLayers();
+    
+    // Get all active flights
+    const flights = Object.values(markers)
+        .map(m => m._data)
+        .filter(f => f && typeof f.lat === 'number' && typeof f.lon === 'number');
+        
+    firSectors.forEach(sec => {
+        // Count flights in bounds
+        const targetsInSec = flights.filter(f => 
+            isPointInPolygon([f.lat, f.lon], sec.polygon)
+        );
+        
+        const count = targetsInSec.length;
+        const capacity = 8;
+        const stressVal = Math.min(100, Math.round((count / capacity) * 100));
+        
+        let color = '#10b981'; // Green
+        let status = 'NOMINAL';
+        let level = 'LOW';
+        
+        if (stressVal >= 90) {
+            color = '#f43f5e'; // Red
+            status = 'CRITICAL SECTOR STRESS';
+            level = 'CRITICAL';
+        } else if (stressVal >= 50) {
+            color = '#facc15'; // Amber
+            status = 'HEAVY CORRIDOR FLOW';
+            level = 'WARNING';
+        }
+        
+        // Draw dashed polygon for the FIR boundary
+        const rect = L.polygon(sec.polygon, {
+            color: color,
+            weight: 1.5,
+            dashArray: '8, 8',
+            fillColor: color,
+            fillOpacity: 0.08,
+            interactive: true
+        }).addTo(map);
+        
+        // Bind dynamic tooltip
+        rect.bindTooltip(`
+            <div style="font-family:'Roboto Mono', monospace; font-size:0.6rem; padding:6px; min-width:140px;">
+                <div style="font-family:'Orbitron', sans-serif; font-weight:bold; color:#fff; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:3px; margin-bottom:4px;">
+                    ${sec.name}
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                    <span style="color:#64748b;">VECTORS:</span>
+                    <span style="color:#fff; font-weight:bold;">${count}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                    <span style="color:#64748b;">STRESS:</span>
+                    <span style="color:${color}; font-weight:bold;">${stressVal}%</span>
+                </div>
+                <div style="font-size:0.5rem; color:${color}; font-weight:bold; margin-top:4px; text-transform:uppercase;">
+                    ● ${status}
+                </div>
+            </div>
+        `, {
+            sticky: true,
+            className: 'plane-label-wrapper'
+        });
+        
+        // Log to mission feed if critical stress detected (and prevent spamming by using a random chance or status change)
+        if (level === 'CRITICAL' && Math.random() < 0.1) {
+            logMissionEvent(`CRITICAL TRAFFIC DENSITY DETECTED IN ${sec.name}`, "CRITICAL");
+        }
+        
+        firLayers.push(rect);
+    });
+}
+
+window.toggleHeatmap = toggleHeatmap;
+window.toggleFIRStress = toggleFIRStress;
+
 // --- A10 SYSTEM ENGINE ---
 const A10 = {
     isSpeaking: false,
@@ -300,6 +515,89 @@ const A10 = {
         // Debug: log what was heard
         console.log('[A10 CMD] Heard:', JSON.stringify(t));
 
+        // Advanced Voice Command Suite Parsers
+        const sectorStatusMatch = t.match(/(?:STATUS OF|CONGESTION IN|STATUS IN)\s+([A-Z\s\-]+?)(?:\s+SECTOR)?$/);
+        const altMatchFL = t.match(/ABOVE\s+FLIGHT\s+LEVEL\s+(\d+)/);
+        const altMatchFeet = t.match(/ABOVE\s+(\d+)\s*(?:FEET|FT)?/);
+        const searchMatch = t.match(/^(?:SEARCH|FIND)\s+([A-Z0-9]+)$/);
+
+        if (sectorStatusMatch) {
+            const secName = sectorStatusMatch[1].trim();
+            const sec = firSectors.find(s => s.name.startsWith(secName) || secName.startsWith(s.name.replace(' FIR', '')));
+            if (sec) {
+                const flights = Object.values(markers)
+                    .map(m => m._data)
+                    .filter(f => f && typeof f.lat === 'number' && typeof f.lon === 'number');
+                const count = flights.filter(f => 
+                    isPointInPolygon([f.lat, f.lon], sec.polygon)
+                ).length;
+                const capacity = 8;
+                const stressVal = Math.min(100, Math.round((count / capacity) * 100));
+                this.speak(`${sec.name} currently contains ${count} active targets. Sector stress is at ${stressVal} percent.`);
+                return;
+            }
+        }
+
+        if (altMatchFL || altMatchFeet) {
+            let targetAltMeters = null;
+            if (altMatchFL) {
+                const fl = parseInt(altMatchFL[1]);
+                targetAltMeters = (fl * 100) / 3.28084;
+            } else if (altMatchFeet) {
+                const ft = parseInt(altMatchFeet[1]);
+                targetAltMeters = ft / 3.28084;
+            }
+            if (targetAltMeters !== null) {
+                const flights = Object.values(markers)
+                    .map(m => m._data)
+                    .filter(f => f && typeof f.lat === 'number' && typeof f.lon === 'number');
+                const count = flights.filter(f => f.altitude > targetAltMeters).length;
+                this.speak(`Found ${count} aircraft operating above the specified flight level.`);
+                return;
+            }
+        }
+
+        if (searchMatch) {
+            const callsign = searchMatch[1];
+            this.speak(`Initiating search query for callsign ${callsign}.`);
+            processCommand(`SEARCH ${callsign}`);
+            return;
+        }
+
+        if (t.includes('FASTEST VECTOR') || t.includes('FASTEST TARGET') || t.includes('FASTEST BOGEY') || t.includes('FASTEST AIRCRAFT')) {
+            const flights = Object.values(markers)
+                .map(m => m._data)
+                .filter(f => f && typeof f.velocity === 'number');
+            if (flights.length > 0) {
+                const fastest = flights.reduce((prev, current) => (prev.velocity > current.velocity) ? prev : current);
+                this.speak(`Locking fastest target. Callsign ${fastest.callsign}, speed ${Math.round(fastest.velocity * 1.852)} kilometers per hour.`);
+                openFlightDetails(fastest);
+            } else {
+                this.speak("No active telemetry targets detected in range.");
+            }
+            return;
+        }
+
+        if (t.includes('HIJACK DRILL') || t.includes('SQUAWK 7500')) {
+            this.speak("Threat assessment: Hijack alert simulation initiated.");
+            processCommand("SIM 7500");
+            return;
+        } else if (t.includes('EMERGENCY DRILL') || t.includes('SQUAWK 7700') || t.includes('THREAT DRILL')) {
+            this.speak("Threat assessment: General emergency simulation initiated.");
+            processCommand("SIM 7700");
+            return;
+        } else if (t.includes('COMMUNICATION DRILL') || t.includes('SQUAWK 7600') || t.includes('RADIO FAIL')) {
+            this.speak("Threat assessment: Radio failure simulation initiated.");
+            processCommand("SIM 7600");
+            return;
+        }
+
+        if (t.includes('EXPORT REPORT') || t.includes('EXPORT DATA') || t.includes('DOWNLOAD DATA') || t.includes('DOWNLOAD REPORT') || t.includes('EXPORT LOG')) {
+            this.speak("Compiling airspace report. Triggering data download.");
+            exportMissionLog();
+            return;
+        }
+
         const isSectorJump =
             t.includes('SECTOR JUMP') ||
             t.includes('JUMP SECTOR') ||
@@ -321,6 +619,10 @@ const A10 = {
             this.speak("Which sector would you like to jump to? Say India, Middle East, USA, or Russia.", () => {
                 this.listen();
             });
+        } else if (t.includes('HEATMAP') || t.includes('TRAFFIC HEATMAP') || t.includes('DENSITY LAYER') || t.includes('DENSITY OVERLAY')) {
+            processCommand('HEATMAP');
+        } else if (t.includes('FIR STRESS') || t.includes('FIR') || t.includes('STRESS LAYER') || t.includes('CONGESTION LAYER')) {
+            processCommand('FIR STRESS');
         } else if (t.includes('LOCK FASTEST') || t.includes('FASTEST BOGEY') || t === 'FASTEST') {
             processCommand('LOCK FASTEST');
         } else if (t.includes('LOCK HIGHEST') || t.includes('HIGHEST BOGEY') || t === 'HIGHEST') {
@@ -675,7 +977,7 @@ function initRadarSystem() {
         });
 
         const suggestionsBox = document.getElementById('cmd-suggestions');
-        const availableCmds = ["SEARCH ", "JUMP ", "THEME ", "FOLLOW", "WEATHER", "STATS", "CLEAR", "CLEAR LOG", "GEOFENCE", "SIM", "HELP"];
+        const availableCmds = ["SEARCH ", "JUMP ", "THEME ", "FOLLOW", "WEATHER", "STATS", "CLEAR", "CLEAR LOG", "GEOFENCE", "SIM", "HEATMAP", "FIR", "EXPORT LOG", "HELP"];
         
         cmdInput.addEventListener('input', (e) => {
             const val = cmdInput.value.toUpperCase();
@@ -922,6 +1224,14 @@ function updateRadar(flights) {
     Object.keys(markers).forEach(id => {
         if (!activeIds.has(id)) { map.removeLayer(markers[id]); delete markers[id]; }
     });
+
+    // Dynamic Overlays Refresh
+    if (isHeatmapActive) {
+        updateHeatmapData();
+    }
+    if (isFIRActive) {
+        renderFIRStress();
+    }
 
     // HUD Updates
     const banner = document.getElementById('alert-relay');
@@ -1416,6 +1726,10 @@ function processCommand(cmd) {
         const logEl = document.getElementById('mission-log');
         if (logEl) logEl.innerHTML = '> LOG WIPED';
         logMissionEvent("MISSION LOG REINITIALIZED", "SUCCESS");
+    } else if (cmd === 'HEATMAP' || cmd === 'TRAFFIC HEATMAP') {
+        toggleHeatmap();
+    } else if (cmd === 'FIR' || cmd === 'FIR STRESS' || cmd === 'STRESS') {
+        toggleFIRStress();
     } else if (cmd === 'WEATHER' || cmd === 'WEATHER REPORT') {
         toggleWeather();
         setTimeout(() => {
@@ -1531,8 +1845,10 @@ function processCommand(cmd) {
         A10.speak("I am A-10.");
     } else if (cmd === 'HELLO' || cmd === 'A10' || cmd === 'A-10') {
         A10.speak("Standing by for tasking.");
+    } else if (cmd === 'EXPORT' || cmd === 'EXPORT REPORT' || cmd === 'EXPORT LOG') {
+        exportMissionLog();
     } else if (cmd === 'HELP') {
-        logMissionEvent("CMD LIST: SEARCH [ID] | JUMP [CITY] | THEME [DARK/SAT] | FOLLOW | WEATHER | STATS | SIM | ZOOM IN | ZOOM OUT | LOCK FASTEST | LOCK HIGHEST | CANCEL LOCK | ANY THREAT | BOGEY IDENTIFIED", "INFO");
+        logMissionEvent("CMD LIST: SEARCH [ID] | JUMP [CITY] | THEME [DARK/SAT] | FOLLOW | WEATHER | STATS | SIM | HEATMAP | FIR | HELP", "INFO");
     } else if (cmd === 'TEST VOICE') {
         announceEmergency("System Check. Tactical AI Voice Uplink is operational and secure.");
         logMissionEvent("VOICE SYNTHESIS TEST INITIATED", "SUCCESS");
@@ -1951,5 +2267,26 @@ function renderTacticalGrid() {
 
 setInterval(updateTerminator, 60000);
 updateTerminator();
+
+function exportMissionLog() {
+    const logEl = document.getElementById('mission-log');
+    if (!logEl) return;
+    const text = Array.from(logEl.childNodes)
+        .map(node => node.innerText)
+        .filter(t => t)
+        .join('\n');
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `FOXBAT_MISSION_LOG_${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    logMissionEvent("MISSION LOG DOWNLOADED SUCCESSFULLY", "SUCCESS");
+}
+
+window.exportMissionLog = exportMissionLog;
 
 

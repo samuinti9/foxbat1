@@ -104,6 +104,13 @@
       color: var(--col-cyan);
     }
 
+    .sector-btn.active {
+      background: rgba(34,211,238,0.15) !important;
+      border-color: var(--col-cyan) !important;
+      color: var(--col-cyan) !important;
+      box-shadow: 0 0 10px rgba(34,211,238,0.2) !important;
+    }
+
     /* ── MISSION LOG ── */
     #mission-log {
       height: 120px;
@@ -441,6 +448,13 @@
         <button class="sector-btn" onclick="switchTheme('sat')">🛰️ SAT</button>
         <button class="sector-btn" onclick="switchTheme('light')">☀️ LIGHT</button>
       </div>
+      <div class="module-head" style="margin-top:10px; margin-bottom:8px; padding-bottom:6px;">
+        <span class="module-title">OVERLAYS</span>
+      </div>
+      <div class="sector-grid">
+        <button id="btn-heatmap" class="sector-btn" onclick="toggleHeatmap()">🔥 HEATMAP</button>
+        <button id="btn-fir" class="sector-btn" onclick="toggleFIRStress()">🖧 FIR STRESS</button>
+      </div>
     </div>
 
     <!-- TELEMETRY -->
@@ -511,6 +525,7 @@
 <!-- ENGINE SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script src="/static/js/main.js?v=26"></script>
 
 <script>
