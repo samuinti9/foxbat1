@@ -1,14 +1,16 @@
-from analytics_engine import get_historical_stats, get_replay_data, generate_pdf_report
 import os
 import sys
 import sqlite3
 import time
 import io
 
-# Ensure project root is importable when pytest runs from workspace root
+# Ensure project root is importable when pytest runs from workspace root.
+# This MUST come before any project-level imports.
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
+
+from analytics_engine import get_historical_stats, get_replay_data, generate_pdf_report  # noqa: E402
 
 
 def create_test_db(path):

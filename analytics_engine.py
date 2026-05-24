@@ -11,9 +11,12 @@ from reportlab.lib.units import inch
 
 logger = logging.getLogger(__name__)
 
-from data_hub import DB_PATH
-
-DEFAULT_DB = DB_PATH
+try:
+    from data_hub import DB_PATH
+    DEFAULT_DB = DB_PATH
+except Exception:  # pragma: no cover
+    import os
+    DEFAULT_DB = os.path.join(os.path.dirname(__file__), 'flights.db')
 
 
 def get_historical_stats(db_path: str = DEFAULT_DB) -> List[Dict[str, Any]]:
